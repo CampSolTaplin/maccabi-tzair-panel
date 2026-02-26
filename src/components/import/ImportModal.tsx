@@ -92,8 +92,8 @@ export default function ImportModal() {
                     <span className="font-medium">{summary.skippedNonMain}</span>
                   </div>
                   <div className="flex justify-between col-span-2">
-                    <span className="text-[#5A6472]">11vo/12vo excluidos:</span>
-                    <span className="font-medium">{summary.excludedGrades}</span>
+                    <span className="text-[#5A6472]">Solo programas principales (1-4)</span>
+                    <span className="font-medium text-[#2D8B4E]">Activo</span>
                   </div>
                 </div>
               </div>

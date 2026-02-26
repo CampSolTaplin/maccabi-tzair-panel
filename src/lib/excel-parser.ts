@@ -1,20 +1,18 @@
 import * as XLSX from 'xlsx';
 import { Chanich, Program } from '@/types';
-import { parseGrade } from './utils';
 
 export interface ImportSummary {
   totalRows: number;
   totalImported: number;
   duplicatesRemoved: number;
-  excludedGrades: number;
   skippedNonMain: number;
   byProgram: Record<string, number>;
   byGrade: Record<string, number>;
 }
 
 /**
- * Column mapping: tries Salesforce format first, then simple format as fallback.
- * This makes the parser work with both raw Salesforce exports and cleaned-up files.
+ * Flexible column getter: tries multiple possible column names.
+ * Handles both Salesforce export format and simplified headers.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getField(row: any, ...keys: string[]): string {
@@ -37,42 +35,96 @@ function getNumField(row: any, ...keys: string[]): number {
 }
 
 /**
- * Determines if a course option is a main program (Katan, Noar, Pre-SOM, SOM)
- * vs. a trip, sleepover, machaneh, etc.
+ * Full Course Option Name format (pipe-delimited):
+ *   segment[0] = "Hebraica"
+ *   segment[1] = Program: "1. Maccabi Katan (K-5 Grade)", "2. Maccabi Noar...", etc.
+ *   segment[2] = Season: "2025/2026 Maccabi Katan", etc.
+ *   segment[3] = Group: "Katan - 1st Grade", "Noar 6th Grade", "Pre-SOM 9th Grade", etc.
+ *   segment[4] = Day: "Saturday; ", "Monday; Saturday; ", etc.
+ *
+ * Main programs: numbers 1-4
+ * Special events: 6 (Trips), 7 (Machanot/Sleepovers)
+ */
+
+/**
+ * Checks if a course option is a main program (1-4) vs special event (6-7).
  */
 function isMainProgramCourse(courseOption: string): boolean {
-  const lower = courseOption.toLowerCase();
+  const segments = courseOption.split('|');
+  const programSegment = (segments[1] || '').trim().toLowerCase();
   return (
-    lower.includes('1. maccabi katan') ||
-    lower.includes('2. maccabi noar') ||
-    lower.includes('3. maccabi pre-school') ||
-    lower.includes('3. pre-school of madrichim') ||
-    lower.includes('4. school of madrichim') ||
-    lower.includes('maccabi katan (k-5') ||
-    lower.includes('maccabi noar (6') ||
-    // Catch-all for non-numbered formats
-    (lower.includes('maccabi katan') && !lower.includes('machane') && !lower.includes('sleepover') && !lower.includes('trip')) ||
-    (lower.includes('maccabi noar') && !lower.includes('machane') && !lower.includes('sleepover') && !lower.includes('trip'))
+    programSegment.startsWith('1.') ||
+    programSegment.startsWith('2.') ||
+    programSegment.startsWith('3.') ||
+    programSegment.startsWith('4.')
   );
 }
 
 /**
- * Parses the program from the course option name.
+ * Determines the program from the course option (using segment[1]).
  */
 function parseProgramFromCourse(courseOption: string): Program {
-  const lower = courseOption.toLowerCase();
-  if (lower.includes('maccabi katan') || lower.includes('1. maccabi katan')) return 'Maccabi Katan';
-  if (lower.includes('maccabi noar') || lower.includes('2. maccabi noar')) return 'Maccabi Noar';
-  if (lower.includes('pre-school of madrichim') || lower.includes('pre-som') || lower.includes('3. maccabi pre')) return 'Pre-SOM';
-  if (lower.includes('school of madrichim') || lower.includes('4. school')) return 'SOM';
+  const segments = courseOption.split('|');
+  const programSegment = (segments[1] || '').trim().toLowerCase();
+
+  if (programSegment.startsWith('1.')) return 'Maccabi Katan';
+  if (programSegment.startsWith('2.')) return 'Maccabi Noar';
+  if (programSegment.startsWith('3.')) return 'Pre-SOM';
+  if (programSegment.startsWith('4.')) return 'SOM';
   return 'Maccabi Katan';
 }
 
-const EXCLUDED_GRADES = ['11th', '12th'];
+/**
+ * Extracts the grade level from the course option (using segment[3]).
+ *
+ * Examples:
+ *   "Katan - 1st Grade"          → "1st"
+ *   "Katan - Kinder"             → "K"
+ *   "Noar 6th Grade"             → "6th"
+ *   "Pre-SOM 9th Grade"          → "9th"
+ *   "SOM 10th Grade (MEMBERS ONLY)" → "10th"
+ */
+function parseGradeFromCourseOption(courseOption: string): string {
+  const segments = courseOption.split('|');
+  const groupSegment = (segments[3] || '').trim();
+
+  if (!groupSegment) return 'N/A';
+
+  const lower = groupSegment.toLowerCase();
+
+  // Kindergarten
+  if (lower.includes('kinder')) return 'K';
+
+  // Try to extract Nth Grade pattern
+  const match = lower.match(/(\d+)(?:st|nd|rd|th)\s*grade/);
+  if (match) {
+    const num = parseInt(match[1]);
+    if (num === 1) return '1st';
+    if (num === 2) return '2nd';
+    if (num === 3) return '3rd';
+    return `${num}th`;
+  }
+
+  // Fallback: try just a number
+  const numMatch = lower.match(/(\d+)/);
+  if (numMatch) {
+    const num = parseInt(numMatch[1]);
+    if (num === 1) return '1st';
+    if (num === 2) return '2nd';
+    if (num === 3) return '3rd';
+    if (num >= 4 && num <= 12) return `${num}th`;
+  }
+
+  return 'N/A';
+}
 
 /**
  * Parses an Excel file (Salesforce export) and returns deduplicated Chanichim.
- * Handles both Salesforce column names and simplified column names.
+ *
+ * Key logic:
+ * - Grade is determined from Full Course Option Name (segment 3), NOT from Contact: Grade
+ * - Only main programs (1-4) are included; trips (6) and machanot (7) are skipped
+ * - Deduplicates by Contact ID to avoid counting a person twice
  */
 export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; summary: ImportSummary } {
   const workbook = XLSX.read(buffer, { type: 'array' });
@@ -82,55 +134,39 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
   const rows: any[] = XLSX.utils.sheet_to_json(sheet);
 
   let skippedNonMain = 0;
-  let excludedGradesCount = 0;
-
   const mainProgramRows: Chanich[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
 
-    // Get full name — try Salesforce format first, then simple
+    // Get full name
     const fullName = getField(row,
       'Registration: Contact: Full Name',
       'Full Name',
-      'Name',
-      'Nombre'
+      'Name'
     );
 
     // Get course option name
     const courseOption = getField(row,
       'Full Course Option Name',
-      'Course Option Name',
-      'Program'
+      'Course Option Name'
     );
 
-    if (!fullName) continue;
+    if (!fullName || !courseOption) continue;
 
-    // Skip non-main program courses (trips, sleepovers, machanot)
-    if (courseOption && !isMainProgramCourse(courseOption)) {
+    // Skip non-main programs (trips, sleepovers, machanot = categories 6, 7)
+    if (!isMainProgramCourse(courseOption)) {
       skippedNonMain++;
       continue;
     }
 
+    // Extract program and grade from the course option name
     const program = parseProgramFromCourse(courseOption);
-
-    const gradeRaw = getField(row,
-      'Contact: Grade',
-      'Grade',
-      'Grado'
-    );
-    const gradeLevel = parseGrade(gradeRaw);
-
-    // Skip 11th and 12th graders
-    if (EXCLUDED_GRADES.includes(gradeLevel)) {
-      excludedGradesCount++;
-      continue;
-    }
+    const gradeLevel = parseGradeFromCourseOption(courseOption);
 
     const contactId = getField(row,
       'Contact: Contact ID',
-      'Contact ID',
-      'ContactID'
+      'Contact ID'
     );
 
     mainProgramRows.push({
@@ -141,16 +177,14 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
       age: getNumField(row, 'Contact: Age', 'Age'),
       emergencyContactName: getField(row,
         'Registration: Account: Emergency Contact 1 Name',
-        'Emergency Contact Name',
-        'Emergency Contact'
+        'Emergency Contact Name'
       ),
-      grade: gradeRaw,
+      grade: getField(row, 'Contact: Grade', 'Grade'),
       school: getField(row, 'Contact: School', 'School'),
       allergies: getField(row, 'Contact: Allergies', 'Allergies') || 'No',
       emergencyPhone: getField(row,
         'Registration: Account: Emergency Contact 1 Cell Phone',
-        'Emergency Phone',
-        'Emergency Cell Phone'
+        'Emergency Phone'
       ),
       jewishIdentification: getField(row,
         'Registration: Account: Self-Identifies as Jewish',
@@ -166,38 +200,28 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
       ),
       primaryEmail: getField(row,
         'Registration: Account: Primary Contact Email',
-        'Primary Email',
-        'Email'
+        'Primary Email'
       ),
       primaryPhone: getField(row,
         'Registration: Account: Phone',
-        'Primary Phone',
-        'Phone'
+        'Primary Phone'
       ),
       contactPhone: getField(row,
         'Contact: Account Name: Primary Contact Phone',
         'Contact Phone'
       ),
-      allEmails: getField(row,
-        'Contact: All Emails',
-        'All Emails'
-      ),
-      enrollmentId: getField(row,
-        'Course Option Enrollment ID',
-        'Enrollment ID'
-      ),
+      allEmails: getField(row, 'Contact: All Emails', 'All Emails'),
+      enrollmentId: getField(row, 'Course Option Enrollment ID', 'Enrollment ID'),
       contactId,
-      courseOptionId: getField(row,
-        'Course Option: Course Option ID',
-        'Course Option ID'
-      ),
+      courseOptionId: getField(row, 'Course Option: Course Option ID', 'Course Option ID'),
       fullCourseOption: courseOption,
       program,
       gradeLevel,
     });
   }
 
-  // Step 2: Deduplicate by Contact ID (or Full Name as fallback)
+  // Deduplicate by Contact ID (or Full Name as fallback)
+  // A person enrolled in the main program only appears once
   const seen = new Set<string>();
   const deduplicated: Chanich[] = [];
 
@@ -209,7 +233,7 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
     }
   }
 
-  // Step 3: Sort by name
+  // Sort alphabetically
   deduplicated.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
   // Build summary
@@ -217,7 +241,6 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
     totalRows: rows.length,
     totalImported: deduplicated.length,
     duplicatesRemoved: mainProgramRows.length - deduplicated.length,
-    excludedGrades: excludedGradesCount,
     skippedNonMain,
     byProgram: {
       'Maccabi Katan': deduplicated.filter(c => c.program === 'Maccabi Katan').length,
@@ -233,11 +256,12 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
     summary.byGrade[c.gradeLevel] = (summary.byGrade[c.gradeLevel] || 0) + 1;
   });
 
-  // Sort byGrade by grade order
+  // Sort byGrade in logical order
   const sortedByGrade: Record<string, number> = {};
   gradeOrder.forEach(g => {
     if (summary.byGrade[g]) sortedByGrade[g] = summary.byGrade[g];
   });
+  // Add any unexpected grades at the end
   Object.keys(summary.byGrade).forEach(g => {
     if (!sortedByGrade[g]) sortedByGrade[g] = summary.byGrade[g];
   });
