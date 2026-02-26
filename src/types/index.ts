@@ -74,3 +74,12 @@ export interface KPIData {
   avgAttendance: number;
   totalCommunityHours: number;
 }
+
+export interface GradeGroup {
+  id: string;
+  label: string;
+  program: Program;
+  realCount: number;
+  schedule: string;
+  color: string;
+}
