@@ -50,7 +50,7 @@ export const attendanceTrendData = {
 export const programBreakdown = {
   labels: ['Katan (K-5)', 'Noar (6-8)', 'Pre-SOM (9th)', 'SOM (10th)'],
   data: [190, 200, 101, 117],
-  colors: ['#1B3A5C', '#2D8B4E', '#D4A843', '#C0392B'],
+  colors: ['#1B2A6B', '#2D8B4E', '#E8687D', '#2A3D8F'],
 };
 
 export const hoursLeaderboard = [

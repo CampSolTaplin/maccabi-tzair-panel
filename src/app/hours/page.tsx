@@ -13,10 +13,10 @@ export default function HoursPage() {
       <div className="p-7">
         <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-5">
           {/* Hours Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#E2DFD8] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E2DFD8] flex items-center justify-between">
-              <h3 className="text-[0.95rem] font-semibold text-[#0F2440]">Registro de Horas Comunitarias</h3>
-              <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0F2440] text-white text-xs font-medium hover:bg-[#1B3A5C] transition-all">
+          <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#D8E1EA] flex items-center justify-between">
+              <h3 className="text-[0.95rem] font-semibold text-[#1B2A6B]">Registro de Horas Comunitarias</h3>
+              <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1B2A6B] text-white text-xs font-medium hover:bg-[#2A3D8F] transition-all">
                 <Plus className="w-3.5 h-3.5" /> Agregar Horas
               </button>
             </div>
@@ -25,7 +25,7 @@ export default function HoursPage() {
                 <thead>
                   <tr>
                     {['Chanich/a', 'Programa', 'Grado', 'Horas Totales', 'Última Actividad', 'Agregar'].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#5A6472] font-semibold bg-[#FAFAF8] border-b border-[#E2DFD8]">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#5A6472] font-semibold bg-[#FAFAF8] border-b border-[#D8E1EA]">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -35,10 +35,10 @@ export default function HoursPage() {
                       <td className="px-4 py-3 border-b border-[#f4f2ee] font-medium">{h.name}</td>
                       <td className="px-4 py-3 border-b border-[#f4f2ee]">{h.program}</td>
                       <td className="px-4 py-3 border-b border-[#f4f2ee]">{h.grade}</td>
-                      <td className="px-4 py-3 border-b border-[#f4f2ee] font-bold text-[#0F2440]">{h.hours}h</td>
+                      <td className="px-4 py-3 border-b border-[#f4f2ee] font-bold text-[#1B2A6B]">{h.hours}h</td>
                       <td className="px-4 py-3 border-b border-[#f4f2ee] text-[#5A6472]">{h.lastActivity}</td>
                       <td className="px-4 py-3 border-b border-[#f4f2ee]">
-                        <input type="number" placeholder="0" min="0" className="w-16 text-center px-2 py-1 rounded-lg border border-[#E2DFD8] text-sm" />
+                        <input type="number" placeholder="0" min="0" className="w-16 text-center px-2 py-1 rounded-lg border border-[#D8E1EA] text-sm" />
                       </td>
                     </tr>
                   ))}
@@ -48,10 +48,10 @@ export default function HoursPage() {
           </div>
 
           {/* Leaderboard */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#E2DFD8] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E2DFD8] flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-[#D4A843]" />
-              <h3 className="text-[0.95rem] font-semibold text-[#0F2440]">Top 8 — Leaderboard</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#D8E1EA] flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-[#E8687D]" />
+              <h3 className="text-[0.95rem] font-semibold text-[#1B2A6B]">Top 8 — Leaderboard</h3>
             </div>
             <div className="px-5 py-2">
               {hoursLeaderboard.map((h, i) => (
@@ -60,7 +60,7 @@ export default function HoursPage() {
                     {i + 1}
                   </div>
                   <span className="text-sm font-medium flex-1">{h.name}</span>
-                  <span className="text-sm font-bold text-[#0F2440]">
+                  <span className="text-sm font-bold text-[#1B2A6B]">
                     {h.hours}<span className="text-xs text-[#5A6472] font-normal">h</span>
                   </span>
                 </div>

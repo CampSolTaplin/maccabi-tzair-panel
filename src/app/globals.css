@@ -4,19 +4,22 @@
   --font-sans: var(--font-dm-sans);
   --font-serif: var(--font-playfair);
 
-  --color-navy: #0F2440;
-  --color-navy-mid: #1B3A5C;
-  --color-navy-light: #264A6E;
-  --color-gold: #D4A843;
-  --color-gold-light: #E8C96A;
-  --color-gold-pale: #FBF4E0;
-  --color-bg: #F2F0EC;
+  /* Maccabi Tzair Brand Colors */
+  --color-navy: #1B2A6B;
+  --color-navy-mid: #2A3D8F;
+  --color-navy-light: #3A50A8;
+  --color-sky: #C5E3F6;
+  --color-sky-light: #E3F2FD;
+  --color-coral: #E8687D;
+  --color-coral-light: #F4B0BB;
+  --color-coral-pale: #FDE8EC;
+  --color-bg: #F0F4F8;
   --color-card: #FFFFFF;
-  --color-text: #1A1A1A;
+  --color-text: #1A1A2E;
   --color-text-secondary: #5A6472;
-  --color-border: #E2DFD8;
+  --color-border: #D8E1EA;
   --color-success: #2D8B4E;
-  --color-warning: #D4843A;
+  --color-warning: #E89B3A;
   --color-danger: #C0392B;
 }
 

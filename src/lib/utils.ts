@@ -26,14 +26,14 @@ export function parseGrade(grade: string): string {
 
 export function programColor(program: Program): string {
   const colors: Record<Program, string> = {
-    'Maccabi Katan': '#1B3A5C',
+    'Maccabi Katan': '#1B2A6B',
     'Maccabi Noar': '#2D8B4E',
-    'Pre-SOM': '#D4A843',
-    'SOM': '#C0392B',
+    'Pre-SOM': '#E8687D',
+    'SOM': '#2A3D8F',
     'Madrichim': '#6C3483',
     'Sr. Madrichim': '#1A5276',
   };
-  return colors[program] || '#1B3A5C';
+  return colors[program] || '#1B2A6B';
 }
 
 export function programBgClass(program: Program): string {

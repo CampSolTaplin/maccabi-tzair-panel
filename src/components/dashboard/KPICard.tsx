@@ -23,7 +23,7 @@ export default function KPICard({
   accentBg,
 }: KPICardProps) {
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm border border-[#E2DFD8] relative overflow-hidden">
+    <div className="bg-white rounded-xl p-5 shadow-sm border border-[#D8E1EA] relative overflow-hidden">
       <div
         className="absolute top-0 left-0 right-0 h-[3px]"
         style={{ background: accentColor }}
@@ -39,7 +39,7 @@ export default function KPICard({
           <Icon className="w-[18px] h-[18px]" />
         </div>
       </div>
-      <div className="font-serif text-[2rem] font-extrabold text-[#0F2440] leading-none">
+      <div className="font-serif text-[2rem] font-extrabold text-[#1B2A6B] leading-none">
         {value}
       </div>
       <div

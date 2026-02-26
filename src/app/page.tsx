@@ -10,11 +10,11 @@ const AttendanceChart = dynamic(() => import('@/components/charts/AttendanceChar
 const ProgramChart = dynamic(() => import('@/components/charts/ProgramChart'), { ssr: false });
 
 const programAttendance = [
-  { name: 'Katan (K-5)', pct: 82, color: '#1B3A5C' },
+  { name: 'Katan (K-5)', pct: 82, color: '#1B2A6B' },
   { name: 'Noar (6-8)', pct: 75, color: '#2D8B4E' },
-  { name: 'Pre-SOM (9th)', pct: 71, color: '#D4A843' },
-  { name: 'SOM (10th)', pct: 80, color: '#C0392B' },
-  { name: 'Madrichim', pct: 91, color: '#6C3483' },
+  { name: 'Pre-SOM (9th)', pct: 71, color: '#E8687D' },
+  { name: 'SOM (10th)', pct: 80, color: '#2A3D8F' },
+  { name: 'Madrichim', pct: 91, color: '#E89B3A' },
 ];
 
 const upcomingActivities = mockActivities.slice(0, 4);
@@ -34,23 +34,23 @@ export default function DashboardPage() {
       <div className="p-7">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
-          <KPICard label="Total Chanichim" value={kpiData.totalChanichim.toLocaleString()} change="12% vs. temporada anterior" changeUp={true} icon={Baby} accentColor="#0F2440" accentBg="rgba(15,36,64,0.08)" />
-          <KPICard label="Madrichim Activos" value={kpiData.totalMadrichim} change="3 nuevos este mes" changeUp={true} icon={ShieldCheck} accentColor="#D4A843" accentBg="rgba(212,168,67,0.15)" />
+          <KPICard label="Total Chanichim" value={kpiData.totalChanichim.toLocaleString()} change="12% vs. temporada anterior" changeUp={true} icon={Baby} accentColor="#1B2A6B" accentBg="rgba(15,36,64,0.08)" />
+          <KPICard label="Madrichim Activos" value={kpiData.totalMadrichim} change="3 nuevos este mes" changeUp={true} icon={ShieldCheck} accentColor="#E8687D" accentBg="rgba(232,104,125,0.12)" />
           <KPICard label="Asistencia Promedio" value={`${kpiData.avgAttendance}%`} change="+4% este mes" changeUp={true} icon={TrendingUp} accentColor="#2D8B4E" accentBg="rgba(45,139,78,0.1)" />
-          <KPICard label="Horas Comunitarias" value={kpiData.totalCommunityHours.toLocaleString()} change="180 este mes" changeUp={true} icon={Clock} accentColor="#D4843A" accentBg="rgba(212,132,58,0.1)" />
+          <KPICard label="Horas Comunitarias" value={kpiData.totalCommunityHours.toLocaleString()} change="180 este mes" changeUp={true} icon={Clock} accentColor="#E89B3A" accentBg="rgba(232,155,58,0.1)" />
         </div>
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-5 mb-7">
-          <div className="bg-white rounded-xl shadow-sm border border-[#E2DFD8] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E2DFD8]">
-              <h3 className="text-[0.95rem] font-semibold text-[#0F2440]">Tendencia de Asistencia — Últimos 8 Shabatot</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#D8E1EA]">
+              <h3 className="text-[0.95rem] font-semibold text-[#1B2A6B]">Tendencia de Asistencia — Últimos 8 Shabatot</h3>
             </div>
             <div className="p-5"><AttendanceChart /></div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-[#E2DFD8] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E2DFD8]">
-              <h3 className="text-[0.95rem] font-semibold text-[#0F2440]">Chanichim por Programa</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#D8E1EA]">
+              <h3 className="text-[0.95rem] font-semibold text-[#1B2A6B]">Chanichim por Programa</h3>
             </div>
             <div className="p-5"><ProgramChart /></div>
           </div>
@@ -58,9 +58,9 @@ export default function DashboardPage() {
 
         {/* Bottom Row */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          <div className="bg-white rounded-xl shadow-sm border border-[#E2DFD8] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E2DFD8]">
-              <h3 className="text-[0.95rem] font-semibold text-[#0F2440]">Próximas Actividades</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#D8E1EA]">
+              <h3 className="text-[0.95rem] font-semibold text-[#1B2A6B]">Próximas Actividades</h3>
             </div>
             <div className="px-5 py-2">
               {upcomingActivities.map((act) => {
@@ -70,9 +70,9 @@ export default function DashboardPage() {
                 const badge = typeLabels[act.type] || typeLabels.special;
                 return (
                   <div key={act.id} className="flex items-center gap-3.5 py-3 border-b border-[#f0eeea] last:border-b-0">
-                    <div className="w-[46px] h-[50px] rounded-lg bg-[#FBF4E0] border border-[#D4A843]/20 flex flex-col items-center justify-center flex-shrink-0">
-                      <span className="text-[0.6rem] uppercase tracking-wider text-[#D4A843] font-bold">{month}</span>
-                      <span className="text-[1.15rem] font-bold text-[#0F2440] leading-none">{day}</span>
+                    <div className="w-[46px] h-[50px] rounded-lg bg-[#E3F2FD] border border-[#1B2A6B]/15 flex flex-col items-center justify-center flex-shrink-0">
+                      <span className="text-[0.6rem] uppercase tracking-wider text-[#1B2A6B] font-bold">{month}</span>
+                      <span className="text-[1.15rem] font-bold text-[#1B2A6B] leading-none">{day}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-[0.85rem] font-semibold text-[#1A1A1A] truncate">{act.name}</h4>
@@ -85,9 +85,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-[#E2DFD8] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E2DFD8]">
-              <h3 className="text-[0.95rem] font-semibold text-[#0F2440]">Asistencia por Programa — Último Shabat</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#D8E1EA]">
+              <h3 className="text-[0.95rem] font-semibold text-[#1B2A6B]">Asistencia por Programa — Último Shabat</h3>
             </div>
             <div className="px-5 py-3">
               {programAttendance.map((p) => (
