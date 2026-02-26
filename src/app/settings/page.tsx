@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import { Database, Bell, Palette, Upload, Edit } from 'lucide-react';
+import { Database, Bell, Palette, Upload, Edit, CheckCircle2 } from 'lucide-react';
+import { useData } from '@/lib/data-context';
 
 function Toggle({ defaultOn = false }: { defaultOn?: boolean }) {
   const [on, setOn] = useState(defaultOn);
@@ -17,6 +18,7 @@ function Toggle({ defaultOn = false }: { defaultOn?: boolean }) {
 }
 
 export default function SettingsPage() {
+  const { setShowImportModal, isImported, importCount } = useData();
   return (
     <>
       <Topbar title="Configuración" subtitle="Ajustes del sistema y conexiones" />
@@ -36,11 +38,26 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between py-3">
             <div>
               <h4 className="text-sm font-medium">Importación Manual CSV/Excel</h4>
-              <p className="text-xs text-[#5A6472] mt-0.5">Subir reportes exportados de Salesforce manualmente</p>
+              <p className="text-xs text-[#5A6472] mt-0.5">
+                {isImported
+                  ? `${importCount} chanichim importados — datos activos`
+                  : 'Subir reportes exportados de Salesforce manualmente'
+                }
+              </p>
             </div>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all">
-              <Upload className="w-3.5 h-3.5" /> Subir Archivo
-            </button>
+            <div className="flex items-center gap-2">
+              {isImported && (
+                <span className="flex items-center gap-1 text-xs text-[#2D8B4E] font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Activo
+                </span>
+              )}
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all"
+              >
+                <Upload className="w-3.5 h-3.5" /> {isImported ? 'Reimportar' : 'Subir Archivo'}
+              </button>
+            </div>
           </div>
         </div>
 

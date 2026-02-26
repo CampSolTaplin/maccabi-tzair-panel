@@ -20,7 +20,13 @@ export function parseGrade(grade: string): string {
   if (g.includes('kinder') || g === 'k') return 'K';
   if (g.includes('preschool') || g.includes('pre-k')) return 'Pre-K';
   const match = g.match(/(\d+)/);
-  if (match) return `${match[1]}th`;
+  if (match) {
+    const num = parseInt(match[1]);
+    if (num === 1) return '1st';
+    if (num === 2) return '2nd';
+    if (num === 3) return '3rd';
+    return `${num}th`;
+  }
   return grade;
 }
 

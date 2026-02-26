@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
+import ClientProviders from "@/components/providers/ClientProviders";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -30,7 +31,9 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${playfair.variable} font-sans antialiased`}
       >
-        <AppShell>{children}</AppShell>
+        <ClientProviders>
+          <AppShell>{children}</AppShell>
+        </ClientProviders>
       </body>
     </html>
   );

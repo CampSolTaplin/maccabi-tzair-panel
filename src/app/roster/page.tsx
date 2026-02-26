@@ -2,16 +2,17 @@
 
 import { useState } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import { mockChanichim } from '@/lib/mock-data';
+import { useData } from '@/lib/data-context';
 import { programBgClass } from '@/lib/utils';
 import { Search, FileUp } from 'lucide-react';
 
 export default function RosterPage() {
+  const { chanichim, isImported, setShowImportModal } = useData();
   const [search, setSearch] = useState('');
   const [program, setProgram] = useState('');
   const [grade, setGrade] = useState('');
 
-  const filtered = mockChanichim.filter((c) => {
+  const filtered = chanichim.filter((c) => {
     if (search && !c.fullName.toLowerCase().includes(search.toLowerCase()) && !c.school.toLowerCase().includes(search.toLowerCase())) return false;
     if (program && c.program !== program) return false;
     if (grade && c.gradeLevel !== grade) return false;
@@ -45,7 +46,10 @@ export default function RosterPage() {
               <option value="">Todos los Grados</option>
               {['K','1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th'].map(g => <option key={g} value={g}>{g}</option>)}
             </select>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#D8E1EA] bg-white text-sm font-medium hover:bg-[#f8f7f5] transition-all">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#D8E1EA] bg-white text-sm font-medium hover:bg-[#f8f7f5] transition-all"
+            >
               <FileUp className="w-4 h-4" /> Importar de Salesforce
             </button>
           </div>
@@ -78,7 +82,10 @@ export default function RosterPage() {
           </table>
         </div>
         <p className="text-sm text-[#5A6472] mt-3">
-          Mostrando {filtered.length} de {mockChanichim.length} registros (datos de ejemplo — importar para ver los 608 chanichim)
+          {isImported
+            ? `Mostrando ${filtered.length} de ${chanichim.length} registros (datos importados de Salesforce)`
+            : `Mostrando ${filtered.length} de ${chanichim.length} registros (datos de ejemplo — importar para ver los 608 chanichim)`
+          }
         </p>
       </div>
     </>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import { mockChanichim, gradeGroups } from '@/lib/mock-data';
+import { useData } from '@/lib/data-context';
 import { programBgClass } from '@/lib/utils';
 import {
   ArrowLeft, Users, Clock, ClipboardList, Save,
@@ -14,6 +14,7 @@ import type { GradeGroup } from '@/types';
 type AttendanceStatus = 'present' | 'late' | 'absent';
 
 export default function AttendancePage() {
+  const { chanichim, gradeGroups, isImported } = useData();
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
@@ -28,7 +29,7 @@ export default function AttendancePage() {
   // Get chanichim for selected grade, sorted alphabetically
   const gradeChanichim = useMemo(() => {
     if (!selectedGrade) return [];
-    return mockChanichim
+    return chanichim
       .filter(c => c.gradeLevel === selectedGrade)
       .sort((a, b) => a.fullName.localeCompare(b.fullName));
   }, [selectedGrade]);
@@ -58,9 +59,9 @@ export default function AttendancePage() {
 
   // Stats for a specific grade on current date
   const getGradeStats = useCallback((gradeId: string) => {
-    const chanichim = mockChanichim.filter(c => c.gradeLevel === gradeId);
+    const gradeMembers = chanichim.filter(c => c.gradeLevel === gradeId);
     let marked = 0, presentCount = 0, lateCount = 0, absentCount = 0;
-    chanichim.forEach(c => {
+    gradeMembers.forEach(c => {
       const s = attendance[`${selectedDate}:${c.id}`];
       if (s) {
         marked++;
@@ -69,8 +70,8 @@ export default function AttendancePage() {
         else if (s === 'absent') absentCount++;
       }
     });
-    return { total: chanichim.length, marked, present: presentCount, late: lateCount, absent: absentCount };
-  }, [attendance, selectedDate]);
+    return { total: gradeMembers.length, marked, present: presentCount, late: lateCount, absent: absentCount };
+  }, [chanichim, attendance, selectedDate]);
 
   // Stats for current detail view
   const detailStats = useMemo(() => {
@@ -257,7 +258,10 @@ export default function AttendancePage() {
 
           {/* Data notice */}
           <p className="text-xs text-[#5A6472] mt-3">
-            Mostrando {gradeChanichim.length} de {selectedGroup.realCount} chanichim (datos de ejemplo — importar de Salesforce para ver la lista completa)
+            {isImported
+              ? `Mostrando ${gradeChanichim.length} chanichim (datos importados de Salesforce)`
+              : `Mostrando ${gradeChanichim.length} de ${selectedGroup.realCount} chanichim (datos de ejemplo — importar de Salesforce para ver la lista completa)`
+            }
           </p>
         </div>
       </>
