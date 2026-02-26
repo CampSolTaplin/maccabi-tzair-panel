@@ -2,29 +2,6 @@ import * as XLSX from 'xlsx';
 import { Chanich, Program } from '@/types';
 import { parseGrade } from './utils';
 
-interface ExcelRow {
-  'Full Name'?: string;
-  'Gender'?: string;
-  'Account Name'?: string;
-  'Age'?: number;
-  'Emergency Contact Name'?: string;
-  'Grade'?: string;
-  'School'?: string;
-  'Allergies'?: string;
-  'Emergency Phone'?: string;
-  'Jewish Identification'?: string;
-  'Community Service'?: string;
-  'Keep Kosher'?: string;
-  'Primary Email'?: string;
-  'Primary Phone'?: string;
-  'Contact Phone'?: string;
-  'All Emails'?: string;
-  'Enrollment ID'?: string;
-  'Contact ID'?: string;
-  'Course Option ID'?: string;
-  'Full Course Option Name'?: string;
-}
-
 export interface ImportSummary {
   totalRows: number;
   totalImported: number;
@@ -33,6 +10,30 @@ export interface ImportSummary {
   skippedNonMain: number;
   byProgram: Record<string, number>;
   byGrade: Record<string, number>;
+}
+
+/**
+ * Column mapping: tries Salesforce format first, then simple format as fallback.
+ * This makes the parser work with both raw Salesforce exports and cleaned-up files.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getField(row: any, ...keys: string[]): string {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null) {
+      return row[key].toString().trim();
+    }
+  }
+  return '';
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getNumField(row: any, ...keys: string[]): number {
+  for (const key of keys) {
+    if (row[key] !== undefined && row[key] !== null) {
+      return Number(row[key]) || 0;
+    }
+  }
+  return 0;
 }
 
 /**
@@ -57,14 +58,13 @@ function isMainProgramCourse(courseOption: string): boolean {
 
 /**
  * Parses the program from the course option name.
- * Only call this after isMainProgramCourse returns true.
  */
 function parseProgramFromCourse(courseOption: string): Program {
   const lower = courseOption.toLowerCase();
   if (lower.includes('maccabi katan') || lower.includes('1. maccabi katan')) return 'Maccabi Katan';
   if (lower.includes('maccabi noar') || lower.includes('2. maccabi noar')) return 'Maccabi Noar';
-  if (lower.includes('pre-school of madrichim') || lower.includes('pre-som') || lower.includes('3.')) return 'Pre-SOM';
-  if (lower.includes('school of madrichim') || lower.includes('4.')) return 'SOM';
+  if (lower.includes('pre-school of madrichim') || lower.includes('pre-som') || lower.includes('3. maccabi pre')) return 'Pre-SOM';
+  if (lower.includes('school of madrichim') || lower.includes('4. school')) return 'SOM';
   return 'Maccabi Katan';
 }
 
@@ -72,37 +72,54 @@ const EXCLUDED_GRADES = ['11th', '12th'];
 
 /**
  * Parses an Excel file (Salesforce export) and returns deduplicated Chanichim.
- * - Filters to main programs only (excludes trips, sleepovers, machanot)
- * - Deduplicates by Contact ID or Full Name
- * - Excludes 11th and 12th graders
+ * Handles both Salesforce column names and simplified column names.
  */
 export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; summary: ImportSummary } {
   const workbook = XLSX.read(buffer, { type: 'array' });
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
-  const rows: ExcelRow[] = XLSX.utils.sheet_to_json(sheet);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows: any[] = XLSX.utils.sheet_to_json(sheet);
 
   let skippedNonMain = 0;
   let excludedGradesCount = 0;
 
-  // Step 1: Map all valid rows with main programs
   const mainProgramRows: Chanich[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const fullName = row['Full Name']?.toString().trim();
-    const courseOption = row['Full Course Option Name']?.toString().trim() || '';
+
+    // Get full name — try Salesforce format first, then simple
+    const fullName = getField(row,
+      'Registration: Contact: Full Name',
+      'Full Name',
+      'Name',
+      'Nombre'
+    );
+
+    // Get course option name
+    const courseOption = getField(row,
+      'Full Course Option Name',
+      'Course Option Name',
+      'Program'
+    );
 
     if (!fullName) continue;
 
     // Skip non-main program courses (trips, sleepovers, machanot)
-    if (!isMainProgramCourse(courseOption)) {
+    if (courseOption && !isMainProgramCourse(courseOption)) {
       skippedNonMain++;
       continue;
     }
 
     const program = parseProgramFromCourse(courseOption);
-    const gradeLevel = parseGrade(row['Grade']?.toString() || '');
+
+    const gradeRaw = getField(row,
+      'Contact: Grade',
+      'Grade',
+      'Grado'
+    );
+    const gradeLevel = parseGrade(gradeRaw);
 
     // Skip 11th and 12th graders
     if (EXCLUDED_GRADES.includes(gradeLevel)) {
@@ -110,27 +127,70 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
       continue;
     }
 
+    const contactId = getField(row,
+      'Contact: Contact ID',
+      'Contact ID',
+      'ContactID'
+    );
+
     mainProgramRows.push({
-      id: row['Contact ID']?.toString() || `import-${i}`,
+      id: contactId || `import-${i}`,
       fullName,
-      gender: row['Gender']?.toString() || '',
-      accountName: row['Account Name']?.toString() || '',
-      age: Number(row['Age']) || 0,
-      emergencyContactName: row['Emergency Contact Name']?.toString() || '',
-      grade: row['Grade']?.toString() || '',
-      school: row['School']?.toString() || '',
-      allergies: row['Allergies']?.toString() || 'No',
-      emergencyPhone: row['Emergency Phone']?.toString() || '',
-      jewishIdentification: row['Jewish Identification']?.toString() || '',
-      communityService: row['Community Service']?.toString() || '',
-      keepKosher: row['Keep Kosher']?.toString() || '',
-      primaryEmail: row['Primary Email']?.toString() || '',
-      primaryPhone: row['Primary Phone']?.toString() || '',
-      contactPhone: row['Contact Phone']?.toString() || '',
-      allEmails: row['All Emails']?.toString() || '',
-      enrollmentId: row['Enrollment ID']?.toString() || '',
-      contactId: row['Contact ID']?.toString() || '',
-      courseOptionId: row['Course Option ID']?.toString() || '',
+      gender: getField(row, 'Contact: Gender', 'Gender'),
+      accountName: getField(row, 'Registration: Account: Account Name', 'Account Name'),
+      age: getNumField(row, 'Contact: Age', 'Age'),
+      emergencyContactName: getField(row,
+        'Registration: Account: Emergency Contact 1 Name',
+        'Emergency Contact Name',
+        'Emergency Contact'
+      ),
+      grade: gradeRaw,
+      school: getField(row, 'Contact: School', 'School'),
+      allergies: getField(row, 'Contact: Allergies', 'Allergies') || 'No',
+      emergencyPhone: getField(row,
+        'Registration: Account: Emergency Contact 1 Cell Phone',
+        'Emergency Phone',
+        'Emergency Cell Phone'
+      ),
+      jewishIdentification: getField(row,
+        'Registration: Account: Self-Identifies as Jewish',
+        'Jewish Identification'
+      ),
+      communityService: getField(row,
+        'Contact: Jewish Community Service',
+        'Community Service'
+      ),
+      keepKosher: getField(row,
+        'Registration: Account: Keep Kosher',
+        'Keep Kosher'
+      ),
+      primaryEmail: getField(row,
+        'Registration: Account: Primary Contact Email',
+        'Primary Email',
+        'Email'
+      ),
+      primaryPhone: getField(row,
+        'Registration: Account: Phone',
+        'Primary Phone',
+        'Phone'
+      ),
+      contactPhone: getField(row,
+        'Contact: Account Name: Primary Contact Phone',
+        'Contact Phone'
+      ),
+      allEmails: getField(row,
+        'Contact: All Emails',
+        'All Emails'
+      ),
+      enrollmentId: getField(row,
+        'Course Option Enrollment ID',
+        'Enrollment ID'
+      ),
+      contactId,
+      courseOptionId: getField(row,
+        'Course Option: Course Option ID',
+        'Course Option ID'
+      ),
       fullCourseOption: courseOption,
       program,
       gradeLevel,
@@ -178,7 +238,6 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
   gradeOrder.forEach(g => {
     if (summary.byGrade[g]) sortedByGrade[g] = summary.byGrade[g];
   });
-  // Add any grades not in the standard order
   Object.keys(summary.byGrade).forEach(g => {
     if (!sortedByGrade[g]) sortedByGrade[g] = summary.byGrade[g];
   });
