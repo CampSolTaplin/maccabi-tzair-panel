@@ -17,7 +17,7 @@ export default function StatisticsPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-8 text-center">
-          <p className="text-[#5A6472] text-lg">Gráficos detallados de estadísticas se activarán con datos reales de Supabase.</p>
+          <p className="text-[#5A6472] text-lg">Gráficos detallados de estadísticas se activarán con datos reales importados.</p>
           <p className="text-[#5A6472] text-sm mt-2">Por ahora, los KPIs de arriba muestran datos de ejemplo.</p>
         </div>
       </div>

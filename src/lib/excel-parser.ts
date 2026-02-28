@@ -35,6 +35,115 @@ function getNumField(row: any, ...keys: string[]): number {
 }
 
 /**
+ * Normalizes school names to canonical form.
+ * Salesforce data has tons of variations (case, abbreviations, typos).
+ */
+function normalizeSchool(raw: string): string {
+  if (!raw) return '';
+  const s = raw.trim();
+  const lower = s.toLowerCase().replace(/\s+/g, ' ');
+
+  // --- Scheck Hillel ---
+  if (lower.includes('hillel') || lower.includes('sheck') || lower === 'kesher/ hillel')
+    return 'Scheck Hillel';
+
+  // --- Ben Gamla ---
+  if (lower.includes('ben gam') || lower.includes('bengam') || lower === 'ben gambla')
+    return 'Ben Gamla';
+
+  // --- ACES / Aventura City of Excellence ---
+  if (lower === 'aces' || lower === 'ace' || lower.includes('aventura city of excellence') ||
+      lower.includes('aces -') || lower === 'aventura charter school')
+    return 'ACES';
+
+  // --- Aventura Waterways ---
+  if (lower.includes('waterway') || lower === 'awaterwaysk8')
+    return 'Aventura Waterways K-8';
+
+  // --- Highland Oaks / VABHOE ---
+  if (lower.includes('highland oak') || lower.includes('vabhoe') || lower.includes('virginia a boone'))
+    return 'Highland Oaks';
+
+  // --- David Posnack ---
+  if (lower.includes('posnack'))
+    return 'David Posnack';
+
+  // --- Michael Krop ---
+  if (lower.includes('krop') || lower.includes('kropp'))
+    return 'Michael Krop';
+
+  // --- Don Soffer ---
+  if (lower.includes('soffer') || lower.includes('sofer') || lower.includes('soifer') || lower === 'dsahs')
+    return 'Don Soffer Aventura High';
+
+  // --- NSU / University School ---
+  if (lower.includes('nsu') || lower === 'university school' || lower === 'u school' ||
+      lower === 'uschool' || lower === 'u-school')
+    return 'NSU University School';
+
+  // --- Pine Crest ---
+  if (lower.includes('pine crest') || lower.includes('pinecrest') || lower === 'pc')
+    return 'Pine Crest';
+
+  // --- JLA ---
+  if (lower === 'jla' || lower.includes('jewish leadership'))
+    return 'Jewish Leadership Academy';
+
+  // --- Lehrman ---
+  if (lower.includes('lehrman'))
+    return 'Lehrman Community Day School';
+
+  // --- Ojeda / ACES Ojeda ---
+  if (lower.includes('ojeda'))
+    return 'ACES Ojeda';
+
+  // --- Norman S. Edelcup / Sunny Isles ---
+  if (lower.includes('edelcup') || lower.includes('sunny isles'))
+    return 'Norman S. Edelcup / SIBK8';
+
+  // --- Aventura Charter (not ACES) ---
+  if (lower === 'aventura charter' || lower === 'aventura charter elementary')
+    return 'Aventura Charter';
+
+  // --- Ruth K. Broad / Bay Harbor ---
+  if (lower.includes('ruth k') || lower.includes('broad bay') || lower.includes('bay harbor'))
+    return 'Ruth K. Broad Bay Harbor';
+
+  // --- Michael-Ann Russell ---
+  if (lower.includes('michael-ann') || lower.includes('michael ann') || lower.includes('marjcc'))
+    return 'Michael-Ann Russell JCC';
+
+  // --- Homeschool ---
+  if (lower.includes('home') && (lower.includes('school') || lower.includes('schooled')))
+    return 'Homeschool';
+
+  // No match — return with consistent casing (Title Case)
+  return s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+}
+
+/**
+ * Normalizes allergy field.
+ * Returns empty string for "no allergy" values so they don't display.
+ */
+function normalizeAllergies(raw: string): string {
+  if (!raw) return '';
+  const lower = raw.trim().toLowerCase();
+
+  // All the ways people say "no allergies"
+  const noAllergyValues = [
+    'no', 'none', 'n/a', 'na', 'non', 'nope', 'mo', 'no.', '-', 'no known',
+    'not known', 'not that we know', 'not that we know of', 'no allergies',
+    'no known allergies', 'ninguna', 'ninguno', 'nada', 'no aplica',
+    'no food allergies', 'no known food allergies',
+  ];
+
+  if (noAllergyValues.includes(lower)) return '';
+
+  // Return the original (trimmed) if it's a real allergy
+  return raw.trim();
+}
+
+/**
  * Full Course Option Name format (pipe-delimited):
  *   segment[0] = "Hebraica"
  *   segment[1] = Program: "1. Maccabi Katan (K-5 Grade)", "2. Maccabi Noar...", etc.
@@ -180,8 +289,8 @@ export function parseExcelFile(buffer: ArrayBuffer): { chanichim: Chanich[]; sum
         'Emergency Contact Name'
       ),
       grade: getField(row, 'Contact: Grade', 'Grade'),
-      school: getField(row, 'Contact: School', 'School'),
-      allergies: getField(row, 'Contact: Allergies', 'Allergies') || 'No',
+      school: normalizeSchool(getField(row, 'Contact: School', 'School')),
+      allergies: normalizeAllergies(getField(row, 'Contact: Allergies', 'Allergies')),
       emergencyPhone: getField(row,
         'Registration: Account: Emergency Contact 1 Cell Phone',
         'Emergency Phone'

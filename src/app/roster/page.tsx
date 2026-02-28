@@ -75,7 +75,13 @@ export default function RosterPage() {
                   <td className="px-4 py-2.5 border-b border-[#f4f2ee]">{c.school}</td>
                   <td className="px-4 py-2.5 border-b border-[#f4f2ee]">{c.emergencyContactName}</td>
                   <td className="px-4 py-2.5 border-b border-[#f4f2ee]">{c.emergencyPhone}</td>
-                  <td className="px-4 py-2.5 border-b border-[#f4f2ee]">{c.allergies}</td>
+                  <td className="px-4 py-2.5 border-b border-[#f4f2ee]">
+                    {c.allergies ? (
+                      <span className="text-[#C0392B] font-medium">{c.allergies}</span>
+                    ) : (
+                      <span className="text-[#C5CDD8]">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
