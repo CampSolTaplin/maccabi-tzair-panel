@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import { Database, Bell, Palette, Upload, Edit, CheckCircle2 } from 'lucide-react';
+import { Database, Bell, Palette, Upload, Edit, CheckCircle2, Trash2 } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 
 function Toggle({ defaultOn = false }: { defaultOn?: boolean }) {
@@ -18,38 +18,39 @@ function Toggle({ defaultOn = false }: { defaultOn?: boolean }) {
 }
 
 export default function SettingsPage() {
-  const { setShowImportModal, isImported, importCount } = useData();
+  const { setShowImportModal, isImported, attendance, clearImport } = useData();
   return (
     <>
-      <Topbar title="Configuración" subtitle="Ajustes del sistema y conexiones" />
+      <Topbar title="Configuración" subtitle="Ajustes del sistema SOM" />
       <div className="p-7 max-w-4xl">
         {/* Data Source */}
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-6 mb-5">
           <h3 className="text-base font-semibold text-[#1B2A6B] mb-4 pb-3 border-b border-[#D8E1EA] flex items-center gap-2">
-            <Database className="w-4 h-4 text-[#E8687D]" /> Fuente de Datos
+            <Database className="w-4 h-4 text-[#E8687D]" /> Datos de Asistencia
           </h3>
-          <div className="flex items-center justify-between py-3 border-b border-[#f4f2ee]">
-            <div>
-              <h4 className="text-sm font-medium">Conexión Salesforce API</h4>
-              <p className="text-xs text-[#5A6472] mt-0.5">Conectar directamente con Salesforce para importar datos automáticamente</p>
-            </div>
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">Próximamente</span>
-          </div>
           <div className="flex items-center justify-between py-3">
             <div>
-              <h4 className="text-sm font-medium">Importación Manual CSV/Excel</h4>
+              <h4 className="text-sm font-medium">Archivo de Asistencia SOM</h4>
               <p className="text-xs text-[#5A6472] mt-0.5">
-                {isImported
-                  ? `${importCount} chanichim importados — datos activos`
-                  : 'Subir reportes exportados de Salesforce manualmente'
+                {isImported && attendance
+                  ? `${attendance.members.length} miembros · ${attendance.dates.length} sesiones · ${attendance.months.length} meses`
+                  : 'Subir el archivo SOM ATTENDANCE.xlsx'
                 }
               </p>
             </div>
             <div className="flex items-center gap-2">
               {isImported && (
-                <span className="flex items-center gap-1 text-xs text-[#2D8B4E] font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Activo
-                </span>
+                <>
+                  <span className="flex items-center gap-1 text-xs text-[#2D8B4E] font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Activo
+                  </span>
+                  <button
+                    onClick={clearImport}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-xs font-medium text-[#C0392B] hover:bg-red-50 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Borrar
+                  </button>
+                </>
               )}
               <button
                 onClick={() => setShowImportModal(true)}
@@ -67,11 +68,7 @@ export default function SettingsPage() {
             <Bell className="w-4 h-4 text-[#E8687D]" /> Notificaciones
           </h3>
           <div className="flex items-center justify-between py-3 border-b border-[#f4f2ee]">
-            <div><h4 className="text-sm font-medium">Alertas de baja asistencia</h4><p className="text-xs text-[#5A6472] mt-0.5">Notificar cuando la asistencia baje del 60%</p></div>
-            <Toggle defaultOn />
-          </div>
-          <div className="flex items-center justify-between py-3 border-b border-[#f4f2ee]">
-            <div><h4 className="text-sm font-medium">Recordatorio de Shabat</h4><p className="text-xs text-[#5A6472] mt-0.5">Enviar recordatorio el viernes a las 3 PM</p></div>
+            <div><h4 className="text-sm font-medium">Alertas de baja asistencia</h4><p className="text-xs text-[#5A6472] mt-0.5">Notificar cuando la asistencia baje del 40%</p></div>
             <Toggle defaultOn />
           </div>
           <div className="flex items-center justify-between py-3">
@@ -92,7 +89,7 @@ export default function SettingsPage() {
             </select>
           </div>
           <div className="flex items-center justify-between py-3">
-            <div><h4 className="text-sm font-medium">Horarios por Defecto</h4><p className="text-xs text-[#5A6472] mt-0.5">Katan/Noar: Sábados 10AM | Pre-SOM: Lun+Sáb | SOM: Mié+Sáb</p></div>
+            <div><h4 className="text-sm font-medium">Horario SOM</h4><p className="text-xs text-[#5A6472] mt-0.5">Miércoles + Sábados</p></div>
             <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all">
               <Edit className="w-3.5 h-3.5" /> Editar
             </button>

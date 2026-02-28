@@ -6,9 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   ClipboardCheck,
-  HandHeart,
-  BarChart3,
-  CalendarDays,
   Users,
   Settings,
   ChevronLeft,
@@ -16,14 +13,10 @@ import {
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { section: 'Principal' },
+  { section: 'SOM' },
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/attendance', label: 'Asistencia', icon: ClipboardCheck },
-  { href: '/hours', label: 'Horas Comunitarias', icon: HandHeart },
-  { href: '/statistics', label: 'Estadísticas', icon: BarChart3 },
-  { section: 'Gestión' },
-  { href: '/activities', label: 'Actividades', icon: CalendarDays },
-  { href: '/roster', label: 'Registro / Roster', icon: Users },
+  { href: '/roster', label: 'Miembros', icon: Users },
   { section: 'Sistema' },
   { href: '/settings', label: 'Configuración', icon: Settings },
 ];
@@ -42,7 +35,6 @@ export default function Sidebar() {
       {/* Brand */}
       <div className="flex items-center gap-3.5 border-b border-white/[0.08] px-5 py-5 min-h-[80px]">
         <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
-          {/* Maccabi Tzair Star of David Logo */}
           <svg viewBox="0 0 100 100" className="w-10 h-10">
             <polygon points="50,8 61,30 83,30 65,46 73,70 50,55 27,70 35,46 17,30 39,30" fill="#C5E3F6" />
             <polygon points="50,92 39,70 17,70 35,54 27,30 50,45 73,30 65,54 83,70 61,70" fill="#C5E3F6" />
@@ -56,10 +48,10 @@ export default function Sidebar() {
           )}
         >
           <h1 className="font-serif text-[1.1rem] font-bold text-[#C5E3F6] leading-tight tracking-wide">
-            Maccabi Tzair
+            School of Madrichim
           </h1>
           <span className="text-[0.7rem] text-white/40 uppercase tracking-[0.12em] font-medium">
-            Miami &bull; Panel de Control
+            Maccabi Tzair Miami
           </span>
         </div>
       </div>

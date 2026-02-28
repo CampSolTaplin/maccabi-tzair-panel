@@ -20,39 +20,32 @@ export interface Chanich {
   contactId: string;
   courseOptionId: string;
   fullCourseOption: string;
-  // Computed fields
   program: Program;
   gradeLevel: string;
 }
 
-export type Program =
-  | 'Maccabi Katan'
-  | 'Maccabi Noar'
-  | 'Pre-SOM'
-  | 'SOM'
-  | 'Madrichim'
-  | 'Sr. Madrichim';
+export type Program = 'SOM';
 
-export type AttendanceStatus = 'present' | 'absent' | 'late' | 'excused';
+// ── SOM Attendance ──
 
-export interface AttendanceRecord {
-  id: string;
-  chanichId: string;
-  date: string;
-  status: AttendanceStatus;
-  note?: string;
-  program: Program;
-  activityId?: string;
+export interface SOMMember {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  contactId: string;
 }
 
-export interface CommunityHours {
-  id: string;
-  chanichId: string;
-  hours: number;
-  activity: string;
-  date: string;
-  verified: boolean;
-  verifiedBy?: string;
+/** true = present, false = absent, null = no data */
+export type SOMAttendanceValue = boolean | null;
+
+export interface SOMAttendanceData {
+  members: SOMMember[];
+  /** ISO date strings like "2025-09-17" */
+  dates: string[];
+  /** Map: contactId -> { [date]: true/false/null } */
+  records: Record<string, Record<string, SOMAttendanceValue>>;
+  /** Monthly groupings for display */
+  months: { name: string; dates: string[] }[];
 }
 
 export interface Activity {
@@ -61,25 +54,7 @@ export interface Activity {
   type: 'shabat' | 'sleepover' | 'machaneh' | 'trip' | 'special';
   date: string;
   endDate?: string;
-  programs: Program[];
-  grades: string[];
   registeredCount: number;
   description?: string;
   location?: string;
-}
-
-export interface KPIData {
-  totalChanichim: number;
-  totalMadrichim: number;
-  avgAttendance: number;
-  totalCommunityHours: number;
-}
-
-export interface GradeGroup {
-  id: string;
-  label: string;
-  program: Program;
-  realCount: number;
-  schedule: string;
-  color: string;
 }
