@@ -7,7 +7,7 @@ import { computeAllMemberHours, MemberHours } from '@/lib/community-hours';
 import { CommunityEvent } from '@/types';
 import {
   Upload, Search, Plus, Trash2, Users, FileText,
-  Calendar, Clock, Award, Star, X, Check,
+  Calendar, Clock, Award, Star, X, Check, ClipboardPaste,
 } from 'lucide-react';
 
 export default function HoursPage() {
@@ -252,6 +252,9 @@ function EventModal({
   const [multiplier, setMultiplier] = useState(event?.multiplier || 1);
   const [attendees, setAttendees] = useState<Set<string>>(new Set(event?.attendees || []));
   const [searchMember, setSearchMember] = useState('');
+  const [showPaste, setShowPaste] = useState(false);
+  const [pasteText, setPasteText] = useState('');
+  const [pasteResult, setPasteResult] = useState<{ matched: string[]; unmatched: string[] } | null>(null);
 
   const filteredMembers = members.filter(m => {
     const q = searchMember.trim().toLowerCase();
@@ -272,6 +275,51 @@ function EventModal({
 
   const selectAll = () => setAttendees(new Set(members.map(m => m.contactId)));
   const clearAll = () => setAttendees(new Set());
+
+  /** Normalize a string for fuzzy comparison */
+  const norm = (s: string) => s.replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').replace(/[^a-záéíóúñü ]/gi, '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+  /** Process pasted names and match to members */
+  const processPaste = () => {
+    const lines = pasteText
+      .split(/[\n,;]+/)
+      .map(l => l.trim())
+      .filter(Boolean);
+
+    const matched: string[] = [];
+    const unmatched: string[] = [];
+    const newIds = new Set(attendees);
+
+    for (const line of lines) {
+      const raw = norm(line);
+      if (!raw) continue;
+
+      // Try different name orderings
+      let found = false;
+      for (const m of members) {
+        const first = norm(m.firstName);
+        const last = norm(m.lastName);
+        const full1 = `${first} ${last}`;
+        const full2 = `${last} ${first}`;
+        const full3 = `${last}${first}`;
+        const full4 = `${first}${last}`;
+
+        if (raw === full1 || raw === full2 || raw === first + last || raw === last + first ||
+            raw === full3 || raw === full4 ||
+            // Also try partial: the line contains first AND last
+            (raw.includes(first) && raw.includes(last) && first.length > 1 && last.length > 1)) {
+          newIds.add(m.contactId);
+          matched.push(`${m.firstName} ${m.lastName}`);
+          found = true;
+          break;
+        }
+      }
+      if (!found) unmatched.push(line);
+    }
+
+    setAttendees(newIds);
+    setPasteResult({ matched, unmatched });
+  };
 
   const handleSave = () => {
     if (!name.trim()) return;
@@ -343,10 +391,50 @@ function EventModal({
                 Asistentes ({attendees.size}/{members.length})
               </label>
               <div className="flex gap-2">
-                <button onClick={selectAll} className="text-xs text-[#1B2A6B] font-medium hover:underline">Seleccionar todos</button>
+                <button onClick={() => { setShowPaste(!showPaste); setPasteResult(null); }}
+                  className={`flex items-center gap-1 text-xs font-medium hover:underline ${showPaste ? 'text-[#E8687D]' : 'text-[#E89B3A]'}`}>
+                  <ClipboardPaste className="w-3 h-3" />{showPaste ? 'Cerrar' : 'Pegar Nombres'}
+                </button>
+                <button onClick={selectAll} className="text-xs text-[#1B2A6B] font-medium hover:underline">Todos</button>
                 <button onClick={clearAll} className="text-xs text-[#C0392B] font-medium hover:underline">Limpiar</button>
               </div>
             </div>
+
+            {/* Paste names area */}
+            {showPaste && (
+              <div className="mb-3 p-3 rounded-lg border border-[#E89B3A]/40 bg-[#FFF8F0]">
+                <p className="text-xs text-[#5A6472] mb-2">
+                  Pegá nombres (uno por línea, separados por coma o punto y coma). Formato: <em>Nombre Apellido</em> o <em>Apellido, Nombre</em>.
+                </p>
+                <textarea
+                  value={pasteText}
+                  onChange={e => { setPasteText(e.target.value); setPasteResult(null); }}
+                  placeholder={"Juan Pérez\nMaría García\nLópez, Carlos"}
+                  rows={4}
+                  className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm mb-2 focus:outline-none focus:border-[#E89B3A] resize-none font-mono"
+                />
+                <button onClick={processPaste} disabled={!pasteText.trim()}
+                  className="px-4 py-1.5 rounded-lg bg-[#E89B3A] text-white text-xs font-semibold hover:bg-[#D08A2F] transition-all disabled:opacity-40">
+                  Procesar y Seleccionar
+                </button>
+
+                {pasteResult && (
+                  <div className="mt-2 text-xs">
+                    {pasteResult.matched.length > 0 && (
+                      <p className="text-[#2D8B4E]">
+                        ✓ {pasteResult.matched.length} encontrados: {pasteResult.matched.join(', ')}
+                      </p>
+                    )}
+                    {pasteResult.unmatched.length > 0 && (
+                      <p className="text-[#C0392B] mt-1">
+                        ✗ {pasteResult.unmatched.length} no encontrados: {pasteResult.unmatched.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <input type="text" value={searchMember} onChange={e => setSearchMember(e.target.value)} placeholder="Filtrar miembros..."
               className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm mb-2 focus:outline-none focus:border-[#2A3D8F]" />
             <div className="max-h-[200px] overflow-y-auto border border-[#D8E1EA] rounded-lg">
