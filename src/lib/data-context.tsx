@@ -1,13 +1,14 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { SOMAttendanceData, CommunityEvent } from '@/types';
+import { SOMAttendanceData, SOMAttendanceValue, CommunityEvent } from '@/types';
 
 interface DataContextType {
   attendance: SOMAttendanceData | null;
   isImported: boolean;
   importAttendance: (data: SOMAttendanceData) => void;
   clearImport: () => void;
+  updateAttendanceCell: (contactId: string, date: string, value: SOMAttendanceValue) => void;
   showImportModal: boolean;
   setShowImportModal: (show: boolean) => void;
   // Community events
@@ -66,6 +67,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const updateAttendanceCell = useCallback((contactId: string, date: string, value: SOMAttendanceValue) => {
+    setAttendance(prev => {
+      if (!prev) return prev;
+      const next = {
+        ...prev,
+        records: {
+          ...prev.records,
+          [contactId]: { ...prev.records[contactId], [date]: value },
+        },
+      };
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   const addEvent = useCallback((event: CommunityEvent) => {
     setEvents(prev => {
       const next = [...prev, event];
@@ -92,7 +108,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   return (
     <DataContext.Provider value={{
-      attendance, isImported, importAttendance, clearImport,
+      attendance, isImported, importAttendance, clearImport, updateAttendanceCell,
       showImportModal, setShowImportModal,
       events, addEvent, updateEvent, deleteEvent,
     }}>
