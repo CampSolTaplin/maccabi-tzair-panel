@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   ClipboardCheck,
   Users,
+  HandHeart,
   Settings,
   ChevronLeft,
 } from 'lucide-react';
@@ -16,6 +17,7 @@ const navItems = [
   { section: 'SOM' },
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/attendance', label: 'Asistencia', icon: ClipboardCheck },
+  { href: '/hours', label: 'Horas Comunitarias', icon: HandHeart },
   { href: '/roster', label: 'Miembros', icon: Users },
   { section: 'Sistema' },
   { href: '/settings', label: 'Configuración', icon: Settings },

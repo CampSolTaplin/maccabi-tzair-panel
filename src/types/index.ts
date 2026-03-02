@@ -40,21 +40,21 @@ export type SOMAttendanceValue = boolean | null;
 
 export interface SOMAttendanceData {
   members: SOMMember[];
-  /** ISO date strings like "2025-09-17" */
   dates: string[];
-  /** Map: contactId -> { [date]: true/false/null } */
   records: Record<string, Record<string, SOMAttendanceValue>>;
-  /** Monthly groupings for display */
   months: { name: string; dates: string[] }[];
 }
 
-export interface Activity {
+// ── Community Hours ──
+
+export interface CommunityEvent {
   id: string;
   name: string;
-  type: 'shabat' | 'sleepover' | 'machaneh' | 'trip' | 'special';
   date: string;
-  endDate?: string;
-  registeredCount: number;
-  description?: string;
-  location?: string;
+  /** Real duration of the event in hours */
+  realHours: number;
+  /** Community hours awarded per real hour (1-4) */
+  multiplier: number;
+  /** Contact IDs of members who attended */
+  attendees: string[];
 }
