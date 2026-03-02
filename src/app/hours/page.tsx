@@ -476,126 +476,114 @@ function LetterModal({ member, events, onClose }: { member: MemberHours; events:
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const logoUrl = `${origin}/letterhead/marjcc-logo.jpeg`;
-    const gmjfUrl = `${origin}/letterhead/gmjf-logo.png`;
-    const uwUrl = `${origin}/letterhead/united-way-logo.png`;
-    const jccaUrl = `${origin}/letterhead/jcc-assoc-logo.jpg`;
+    const o = origin;
 
     printWindow.document.write(`
 <!DOCTYPE html>
 <html>
 <head>
   <title>Community Hours - ${member.fullName}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;0,900;1,400&family=Trebuchet+MS&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
   <style>
-    @page { size: letter; margin: 1in 0.5in 0.4in 1in; }
+    @page { size: letter; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; color: #1a1a1a; font-size: 9pt; line-height: 1.5; }
+    .page { position: relative; width: 8.5in; height: 11in; margin: 0 auto; overflow: hidden; }
 
-    .page { position: relative; width: 8.5in; min-height: 11in; margin: 0 auto; }
-
-    /* ── Left Sidebar (Board of Directors) ── */
+    /* ── Left Sidebar column ── */
     .sidebar {
-      position: absolute; top: 1.15in; left: 0.22in; width: 1.44in;
-      font-family: 'Roboto', 'Segoe UI', sans-serif; font-size: 7.5pt; color: #0493B6; line-height: 1.15;
+      position: absolute; top: 0; left: 0; width: 1.58in; height: 100%;
+      padding: 0.24in 0 0 0.32in;
+      font-family: 'Roboto', 'Segoe UI', sans-serif; font-size: 7.5pt; color: #0493B6; line-height: 1.2;
     }
-    .sidebar .section-title { font-weight: 900; font-size: 7.5pt; margin-top: 6px; margin-bottom: 2px; }
-    .sidebar .role { font-style: italic; font-size: 7pt; }
-    .sidebar .name { font-weight: 400; }
-    .sidebar .board-list { margin-top: 4px; font-size: 7pt; line-height: 1.25; }
-    .sidebar .partner-logos { margin-top: 14px; }
-    .sidebar .partner-logos img { display: block; margin-bottom: 6px; }
-
-    /* ── MARJCC Logo (top-left) ── */
-    .logo-container {
-      position: absolute; top: 0.75in; left: 0.30in; width: 1.21in; height: 0.77in; overflow: hidden;
-    }
-    .logo-container img {
-      width: 2.53in; height: 2.53in; object-fit: none;
-      object-position: -22.3% -34.6%;
-      clip-path: inset(34.6% 29.7% 34.9% 22.3%);
-      margin-top: -0.88in; margin-left: -0.56in;
-    }
+    .sidebar img.logo { width: 1.21in; height: auto; margin-bottom: 10px; }
+    .sidebar .sec { font-family: Arial, sans-serif; font-weight: bold; font-size: 7.5pt; margin-top: 8px; margin-bottom: 1px; }
+    .sidebar .nm { font-weight: 400; line-height: 1.3; }
+    .sidebar .rl { font-style: italic; font-size: 7pt; line-height: 1.2; }
+    .sidebar .brd { margin-top: 2px; font-size: 7pt; line-height: 1.4; }
+    .sidebar .brd div { line-height: 1.4; }
+    .sidebar .logos { margin-top: 14px; }
+    .sidebar .logos img { display: block; margin-bottom: 8px; }
 
     /* ── Main Content ── */
     .content {
-      margin-left: 1.80in; padding: 1in 0.5in 0 0;
+      margin-left: 1.70in; padding: 1in 0.6in 0 0;
     }
-    .date { text-align: left; margin-bottom: 24px; font-size: 10pt; color: #333; }
-    .salutation { font-size: 10pt; margin-bottom: 16px; }
-    .body-text { font-size: 10pt; text-align: justify; margin-bottom: 14px; line-height: 1.6; }
+    .date { margin-bottom: 20px; font-size: 9pt; }
+    .salutation { font-size: 9pt; margin-bottom: 14px; }
+    .body-text { font-size: 9pt; text-align: justify; margin-bottom: 12px; line-height: 1.6; }
     .body-text strong { color: #0493B6; }
-    .breakdown { margin: 18px 0; padding: 14px 18px; background: #f5f9fa; border-left: 3px solid #0493B6; }
-    .breakdown h4 { font-family: 'Roboto', sans-serif; font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; color: #0493B6; margin: 0 0 8px; font-weight: 700; }
-    .breakdown-row { display: flex; justify-content: space-between; font-size: 9pt; padding: 3px 0; }
-    .breakdown-row.total { border-top: 1px solid #cde3e8; padding-top: 6px; margin-top: 6px; font-weight: bold; color: #0493B6; }
-    .signature { margin-top: 40px; }
-    .sig-line { width: 200px; border-top: 1px solid #333; margin-top: 36px; padding-top: 6px; }
-    .sig-name { font-size: 10pt; font-weight: bold; }
-    .sig-title { font-size: 9pt; color: #555; }
+    .breakdown { margin: 14px 0; padding: 12px 16px; background: #f5f9fa; border-left: 3px solid #0493B6; }
+    .breakdown h4 { font-family: 'Roboto', sans-serif; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1px; color: #0493B6; margin: 0 0 6px; font-weight: 700; }
+    .breakdown-row { display: flex; justify-content: space-between; font-size: 8.5pt; padding: 2px 0; }
+    .breakdown-row.total { border-top: 1px solid #cde3e8; padding-top: 5px; margin-top: 5px; font-weight: bold; color: #0493B6; }
+    .sig-block { margin-top: 24px; }
+    .sig-block img { height: 50px; display: block; margin-bottom: 0; }
+    .sig-line { border-top: 1px solid #333; width: 180px; padding-top: 4px; }
+    .sig-name { font-size: 9pt; font-weight: bold; }
+    .sig-title { font-size: 8pt; color: #555; }
 
     /* ── Footer ── */
     .page-footer {
-      position: absolute; bottom: 0.15in; left: 0.375in; right: 0.375in;
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0 0.375in 0.12in;
       font-family: 'Roboto', 'Segoe UI', sans-serif; color: #0493B6; text-align: center;
     }
-    .footer-contact { font-size: 8pt; margin-bottom: 4px; }
-    .footer-disclaimer { font-size: 6pt; line-height: 1.3; }
+    .footer-contact { font-size: 8pt; margin-bottom: 3px; }
+    .footer-disc { font-size: 6pt; line-height: 1.3; text-align: left; padding: 0 0.375in; }
 
     @media print {
       body { margin: 0; }
-      .page { width: auto; min-height: auto; page-break-after: always; }
-      .sidebar { position: fixed; }
-      .logo-container { position: fixed; }
-      .page-footer { position: fixed; bottom: 0; }
+      .page { width: 8.5in; height: 11in; page-break-after: always; }
     }
     @media screen {
-      body { background: #e8e8e8; }
-      .page { background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15); margin: 20px auto; }
+      body { background: #ddd; padding: 20px 0; }
+      .page { background: white; box-shadow: 0 2px 16px rgba(0,0,0,0.18); margin: 0 auto; }
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <!-- MARJCC Logo -->
-    <div class="logo-container">
-      <img src="${logoUrl}" alt="MARJCC Logo" />
-    </div>
-
-    <!-- Left Sidebar - Board of Directors -->
+    <!-- Left Sidebar -->
     <div class="sidebar">
-      <div class="section-title">Chair of the Board</div>
-      <div class="name">Joshua Weingard</div>
+      <img class="logo" src="${o}/letterhead/marjcc-logo.png" alt="MARJCC" />
 
-      <div class="section-title">Executive Officers</div>
-      <div class="role">Chair-Elect</div>
-      <div class="name">Tama Rozovski</div>
-      <div class="role">Immediate Past Chair</div>
-      <div class="name">Elise Scheck-Bonwitt</div>
-      <div class="role">Vice Chair</div>
-      <div class="name">Nicole Gorin</div>
-      <div class="role">Vice Chair</div>
-      <div class="name">Daniel Halberstein</div>
-      <div class="role">Vice Chair of Operations</div>
-      <div class="name">Jacquie Weisblum</div>
-      <div class="role">At Large Member</div>
-      <div class="name">Joe Antebi</div>
-      <div class="role">At Large Member</div>
-      <div class="name">Leslie Sharpe</div>
-      <div class="role">Secretary</div>
+      <div class="sec">Chair of the Board</div>
+      <div class="nm">Joshua Weingard</div>
 
-      <div class="section-title">Board of Directors</div>
-      <div class="board-list">
-        Joe Ackerman, Joel Bary, Amanda Bender, Suzette Diamond, Carlos Frost, Matthew Grosack, Uzi Hardoon, Alan Luchnick, Jason Morjain, Leon Ojalvo, Josef Preschel, Ariel Saban, Sami Shiro, Monica Sichel, Ofer Tamir, Eduardo Tobias, Flynn Turner, Alex Wolak
+      <div class="sec">Executive Officers</div>
+      <div class="nm">Tama Rozovski</div>
+      <div class="rl">Chair-Elect</div>
+      <div class="nm" style="margin-top:4px">Elise Scheck-Bonwitt</div>
+      <div class="rl">Immediate Past Chair</div>
+      <div class="nm" style="margin-top:4px">Nicole Gorin</div>
+      <div class="rl">Vice Chair</div>
+      <div class="nm" style="margin-top:4px">Daniel Halberstein</div>
+      <div class="rl">Vice Chair of Operations</div>
+      <div class="nm" style="margin-top:4px">Jacquie Weisblum</div>
+      <div class="rl">At Large Member</div>
+      <div class="nm" style="margin-top:4px">Joe Antebi</div>
+      <div class="rl">At Large Member</div>
+      <div class="nm" style="margin-top:4px">Leslie Sharpe</div>
+      <div class="rl">Secretary</div>
+
+      <div class="sec">Board of Directors</div>
+      <div class="brd">
+        <div>Joe Ackerman</div><div>Joel Bary</div><div>Amanda Bender</div>
+        <div>Suzette Diamond</div><div>Carlos Frost</div><div>Matthew Grosack</div>
+        <div>Uzi Hardoon</div><div>Alan Luchnick</div><div>Jason Morjain</div>
+        <div>Leon Ojalvo</div><div>Josef Preschel</div><div>Ariel Saban</div>
+        <div>Sami Shiro</div><div>Monica Sichel</div><div>Ofer Tamir</div>
+        <div>Eduardo Tobias</div><div>Flynn Turner</div><div>Alex Wolak</div>
       </div>
 
-      <div class="section-title">Chief Executive Officer</div>
-      <div class="name">Alan Sataloff</div>
+      <div class="sec">Chief Executive Officer</div>
+      <div class="nm">Alan Sataloff</div>
 
-      <div class="partner-logos">
-        <img src="${gmjfUrl}" alt="Greater Miami Jewish Federation" style="width:1.24in;height:auto;" />
-        <img src="${uwUrl}" alt="United Way" style="width:0.82in;height:auto;" />
-        <img src="${jccaUrl}" alt="JCC Association" style="width:0.89in;height:auto;" />
+      <div class="logos">
+        <img src="${o}/letterhead/gmjf-logo.png" alt="GMJF" style="width:1.24in" />
+        <img src="${o}/letterhead/united-way-logo.png" alt="United Way" style="width:0.82in" />
+        <img src="${o}/letterhead/jcc-assoc-logo.png" alt="JCC Association" style="width:0.89in" />
       </div>
     </div>
 
@@ -642,7 +630,8 @@ function LetterModal({ member, events, onClose }: { member: MemberHours; events:
 
       <div class="body-text">Sincerely,</div>
 
-      <div class="signature">
+      <div class="sig-block">
+        <img src="${o}/letterhead/firma-marleny.png" alt="Signature" />
         <div class="sig-line">
           <div class="sig-name">Marleny Rosemberg</div>
           <div class="sig-title">Hebraica Director</div>
@@ -654,10 +643,10 @@ function LetterModal({ member, events, onClose }: { member: MemberHours; events:
     <!-- Footer -->
     <div class="page-footer">
       <div class="footer-contact">
-        Michael-Ann Russell Jewish Community Center &bull; 18900 NE 25 Avenue, North Miami Beach, Florida 33180 &bull; 305.932.4200 &nbsp;*&nbsp; www.marjcc.org
+        Michael-Ann Russell Jewish Community Center &bull; 18900 NE 25 Avenue, North Miami Beach, Florida 33180 &bull; 305.932.4200 &nbsp;&bull;&nbsp; www.marjcc.org
       </div>
-      <div class="footer-disclaimer">
-        A COPY OF THE OFFICIAL REGISTRATION (CH-1998) AND FINANCIAL INFORMATION MAY BE OBTAINED FROM THE DIVISION OF CONSUMER SERVICES BY CALLING TOLL-FREE 1-800-HELP-FLA (435-7352) WITHIN THE STATE. REGISTRATION DOES NOT IMPLY ENDORSEMENT, APPROVAL OR RECOMMENDATION BY THE STATE. Michael-Ann Russell Jewish Community Center, Inc. is a beneficiary agency of the Greater Miami Jewish Federation.
+      <div class="footer-disc">
+        Our state registration number is CH-1998. A copy of the official registration and financial information may be obtained from the Division of Consumer Services by calling toll-free the state, 1-800-HELP-FLA. Registration does not imply endorsement, approval, or recommendation. Michael-Ann Russell Jewish Community Center is a beneficiary agency of the Greater Miami Jewish Federation, United Way of Miami-Dade, and a member of the JCC Association of North America.
       </div>
     </div>
   </div>
