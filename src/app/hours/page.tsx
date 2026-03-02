@@ -11,16 +11,19 @@ import {
 } from 'lucide-react';
 
 export default function HoursPage() {
-  const { attendance, isImported, setShowImportModal, events, addEvent, updateEvent, deleteEvent } = useData();
+  const { attendance, isImported, setShowImportModal, events, addEvent, updateEvent, deleteEvent, activeMembers } = useData();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'members' | 'events'>('members');
   const [showEventModal, setShowEventModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CommunityEvent | null>(null);
   const [letterMember, setLetterMember] = useState<MemberHours | null>(null);
 
+  // Only compute hours for active members
+  const activeIds = useMemo(() => new Set(activeMembers.map(m => m.contactId)), [activeMembers]);
+
   const allHours = useMemo(() =>
-    computeAllMemberHours(attendance, events),
-  [attendance, events]);
+    computeAllMemberHours(attendance, events).filter(m => activeIds.has(m.contactId)),
+  [attendance, events, activeIds]);
 
   const filteredMembers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -213,7 +216,7 @@ export default function HoursPage() {
       {showEventModal && (
         <EventModal
           event={editingEvent}
-          members={attendance?.members || []}
+          members={activeMembers}
           onSave={(evt) => {
             if (editingEvent) updateEvent(evt);
             else addEvent(evt);

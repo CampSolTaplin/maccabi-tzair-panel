@@ -45,6 +45,26 @@ export interface SOMAttendanceData {
   months: { name: string; dates: string[] }[];
 }
 
+// ── Member Management ──
+
+export type MemberStatus = 'active' | 'dropped';
+
+export interface MemberOverride {
+  status: MemberStatus;
+  /** ISO date when status changed */
+  statusDate: string;
+}
+
+/** Manually added members (not from Excel) */
+export interface AddedMember {
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  contactId: string;
+  /** ISO date when member was added */
+  joinDate: string;
+}
+
 // ── Community Hours ──
 
 export interface CommunityEvent {

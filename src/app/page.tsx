@@ -6,16 +6,16 @@ import { useData } from '@/lib/data-context';
 import { Users, TrendingUp, CalendarCheck, Upload, UserCheck, AlertTriangle } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { attendance, isImported, setShowImportModal } = useData();
+  const { attendance, isImported, setShowImportModal, activeMembers } = useData();
 
   const kpis = useMemo(() => {
     if (!attendance) return null;
 
-    const totalMembers = attendance.members.length;
+    const totalMembers = activeMembers.length;
     const totalSessions = attendance.dates.length;
 
     let totalPresent = 0, totalAbsent = 0;
-    for (const m of attendance.members) {
+    for (const m of activeMembers) {
       const rec = attendance.records[m.contactId] || {};
       for (const d of attendance.dates) {
         if (rec[d] === true) totalPresent++;
@@ -28,7 +28,7 @@ export default function DashboardPage() {
     // Last session
     const lastDate = attendance.dates[attendance.dates.length - 1];
     let lastPresent = 0, lastAbsent = 0;
-    for (const m of attendance.members) {
+    for (const m of activeMembers) {
       const v = (attendance.records[m.contactId] || {})[lastDate];
       if (v === true) lastPresent++;
       else if (v === false) lastAbsent++;
@@ -39,7 +39,7 @@ export default function DashboardPage() {
     // Monthly
     const monthlyRates = attendance.months.map(month => {
       let p = 0, a = 0;
-      for (const m of attendance.members) {
+      for (const m of activeMembers) {
         const rec = attendance.records[m.contactId] || {};
         for (const d of month.dates) {
           if (rec[d] === true) p++;
@@ -51,7 +51,7 @@ export default function DashboardPage() {
     });
 
     // Member rankings
-    const memberRates = attendance.members.map(m => {
+    const memberRates = activeMembers.map(m => {
       const rec = attendance.records[m.contactId] || {};
       let p = 0, a = 0;
       for (const d of attendance.dates) {
@@ -70,7 +70,7 @@ export default function DashboardPage() {
       topMembers: memberRates.slice(0, 5),
       bottomMembers: [...memberRates].sort((a, b) => a.rate - b.rate).slice(0, 5),
     };
-  }, [attendance]);
+  }, [attendance, activeMembers]);
 
   if (!isImported || !kpis) {
     return (

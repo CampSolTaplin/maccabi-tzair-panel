@@ -71,8 +71,10 @@ export function parseSOMAttendance(buffer: ArrayBuffer): SOMAttendanceData {
   }
 
   // Parse members and their attendance (starting at row 3)
-  const members: SOMMember[] = [];
+  // Use a map to deduplicate by contactId (merge attendance from duplicate rows)
+  const memberMap = new Map<string, SOMMember>();
   const records: Record<string, Record<string, SOMAttendanceValue>> = {};
+  const usedIds = new Set<string>();
 
   for (let row = 3; row < raw.length; row++) {
     const rowData = raw[row];
@@ -80,27 +82,45 @@ export function parseSOMAttendance(buffer: ArrayBuffer): SOMAttendanceData {
 
     const firstName = cleanStr(rowData[0]);
     const lastName = cleanStr(rowData[1]);
-    const contactId = String(rowData[2] || `som-${row}`).trim();
+    let contactId = String(rowData[2] || '').trim();
     const fullName = `${firstName} ${lastName}`;
 
     if (!firstName && !lastName) continue;
 
-    members.push({ firstName, lastName, fullName, contactId });
+    // Generate unique contactId if missing
+    if (!contactId) {
+      contactId = `som-${row}`;
+    }
 
-    // Parse attendance for each date column
-    const memberRecords: Record<string, SOMAttendanceValue> = {};
+    // Ensure unique contactId: if already used by a DIFFERENT person, add suffix
+    if (usedIds.has(contactId) && memberMap.has(contactId)) {
+      const existing = memberMap.get(contactId)!;
+      if (existing.firstName !== firstName || existing.lastName !== lastName) {
+        contactId = `${contactId}-${row}`;
+      }
+    }
+    usedIds.add(contactId);
+
+    // Register member (first occurrence wins for name)
+    if (!memberMap.has(contactId)) {
+      memberMap.set(contactId, { firstName, lastName, fullName, contactId });
+    }
+
+    // Parse attendance — merge with existing records (later rows fill gaps)
+    if (!records[contactId]) records[contactId] = {};
     for (const [col, dateStr] of dateColMap) {
       const val = rowData[col];
       if (val === true || val === 'true' || val === 'TRUE') {
-        memberRecords[dateStr] = true;
+        records[contactId][dateStr] = true;
       } else if (val === false || val === 'false' || val === 'FALSE') {
-        memberRecords[dateStr] = false;
-      } else {
-        memberRecords[dateStr] = null;
+        records[contactId][dateStr] = false;
+      } else if (records[contactId][dateStr] === undefined) {
+        records[contactId][dateStr] = null;
       }
     }
-    records[contactId] = memberRecords;
   }
+
+  const members = Array.from(memberMap.values());
 
   // Sort members alphabetically by last name, then first name
   members.sort((a, b) => {
