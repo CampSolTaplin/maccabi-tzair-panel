@@ -23,12 +23,13 @@ export default function HoursPage() {
   [attendance, events]);
 
   const filteredMembers = useMemo(() => {
-    if (!search) return allHours;
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
+    if (!q) return allHours;
     return allHours.filter(m =>
       m.fullName.toLowerCase().includes(q) ||
       m.firstName.toLowerCase().includes(q) ||
-      m.lastName.toLowerCase().includes(q)
+      m.lastName.toLowerCase().includes(q) ||
+      `${m.lastName} ${m.firstName}`.toLowerCase().includes(q)
     );
   }, [allHours, search]);
 
@@ -250,9 +251,11 @@ function EventModal({
   const [searchMember, setSearchMember] = useState('');
 
   const filteredMembers = members.filter(m => {
-    if (!searchMember) return true;
-    const q = searchMember.toLowerCase();
-    return m.firstName.toLowerCase().includes(q) || m.lastName.toLowerCase().includes(q);
+    const q = searchMember.trim().toLowerCase();
+    if (!q) return true;
+    const first = (m.firstName || '').trim().toLowerCase();
+    const last = (m.lastName || '').trim().toLowerCase();
+    return first.includes(q) || last.includes(q) || `${first} ${last}`.includes(q) || `${last} ${first}`.includes(q);
   });
 
   const toggleAttendee = (id: string) => {

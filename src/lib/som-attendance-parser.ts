@@ -78,8 +78,8 @@ export function parseSOMAttendance(buffer: ArrayBuffer): SOMAttendanceData {
     const rowData = raw[row];
     if (!rowData || !rowData[0]) continue; // Skip empty rows
 
-    const firstName = String(rowData[0] || '').trim();
-    const lastName = String(rowData[1] || '').trim();
+    const firstName = cleanStr(rowData[0]);
+    const lastName = cleanStr(rowData[1]);
     const contactId = String(rowData[2] || `som-${row}`).trim();
     const fullName = `${firstName} ${lastName}`;
 
@@ -126,6 +126,14 @@ export function parseSOMAttendance(buffer: ArrayBuffer): SOMAttendanceData {
   });
 
   return { members, dates, records, months };
+}
+
+/** Strip non-breaking spaces, zero-width chars, and normalize whitespace */
+function cleanStr(val: unknown): string {
+  return String(val || '')
+    .replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function formatDate(d: Date): string {
