@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember } from '@/types';
 
 interface DataContextType {
@@ -31,14 +31,19 @@ interface DataContextType {
   reactivateMember: (contactId: string) => void;
   addNewMember: (firstName: string, lastName: string, joinDate: string) => void;
   removeAddedMember: (contactId: string) => void;
+  loading: boolean;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
 
-const STORAGE_KEY = 'som-attendance-data';
-const EVENTS_KEY = 'som-community-events';
-const OVERRIDES_KEY = 'som-member-overrides';
-const ADDED_KEY = 'som-added-members';
+// Fire-and-forget save to server
+function saveToServer(key: string, value: unknown) {
+  fetch('/api/data', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, value }),
+  }).catch(err => console.error('Failed to save', key, err));
+}
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [attendance, setAttendance] = useState<SOMAttendanceData | null>(null);
@@ -47,34 +52,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [memberOverrides, setMemberOverrides] = useState<Record<string, MemberOverride>>({});
   const [addedMembers, setAddedMembers] = useState<AddedMember[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load from localStorage on mount
+  // Track latest values for save callbacks that need current state
+  const memberOverridesRef = useRef(memberOverrides);
+  memberOverridesRef.current = memberOverrides;
+  const addedMembersRef = useRef(addedMembers);
+  addedMembersRef.current = addedMembers;
+
+  // Load from server on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as SOMAttendanceData;
-        if (parsed && parsed.members && parsed.members.length > 0) {
-          setAttendance(parsed);
-          setIsImported(true);
+    fetch('/api/data')
+      .then(res => res.json())
+      .then(data => {
+        if (data.attendanceData) {
+          const parsed = data.attendanceData as SOMAttendanceData;
+          if (parsed.members && parsed.members.length > 0) {
+            setAttendance(parsed);
+            setIsImported(true);
+          }
         }
-      }
-    } catch { /* ignore */ }
-
-    try {
-      const storedEvents = localStorage.getItem(EVENTS_KEY);
-      if (storedEvents) setEvents(JSON.parse(storedEvents));
-    } catch { /* ignore */ }
-
-    try {
-      const storedOverrides = localStorage.getItem(OVERRIDES_KEY);
-      if (storedOverrides) setMemberOverrides(JSON.parse(storedOverrides));
-    } catch { /* ignore */ }
-
-    try {
-      const storedAdded = localStorage.getItem(ADDED_KEY);
-      if (storedAdded) setAddedMembers(JSON.parse(storedAdded));
-    } catch { /* ignore */ }
+        if (Array.isArray(data.events)) setEvents(data.events);
+        if (data.memberOverrides && typeof data.memberOverrides === 'object') {
+          setMemberOverrides(data.memberOverrides);
+        }
+        if (Array.isArray(data.addedMembers)) setAddedMembers(data.addedMembers);
+      })
+      .catch(err => console.error('Failed to load data', err))
+      .finally(() => setLoading(false));
   }, []);
 
   // ── Attendance CRUD ──
@@ -82,13 +87,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const importAttendance = useCallback((data: SOMAttendanceData) => {
     setAttendance(data);
     setIsImported(true);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch { /* ignore */ }
+    saveToServer('attendanceData', data);
   }, []);
 
   const clearImport = useCallback(() => {
     setAttendance(null);
     setIsImported(false);
-    localStorage.removeItem(STORAGE_KEY);
+    saveToServer('attendanceData', null);
   }, []);
 
   const updateAttendanceCell = useCallback((contactId: string, date: string, value: SOMAttendanceValue) => {
@@ -101,7 +106,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           [contactId]: { ...prev.records[contactId], [date]: value },
         },
       };
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      saveToServer('attendanceData', next);
       return next;
     });
   }, []);
@@ -111,7 +116,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addEvent = useCallback((event: CommunityEvent) => {
     setEvents(prev => {
       const next = [...prev, event];
-      try { localStorage.setItem(EVENTS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      saveToServer('events', next);
       return next;
     });
   }, []);
@@ -119,7 +124,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateEvent = useCallback((event: CommunityEvent) => {
     setEvents(prev => {
       const next = prev.map(e => e.id === event.id ? event : e);
-      try { localStorage.setItem(EVENTS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      saveToServer('events', next);
       return next;
     });
   }, []);
@@ -127,7 +132,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteEvent = useCallback((id: string) => {
     setEvents(prev => {
       const next = prev.filter(e => e.id !== id);
-      try { localStorage.setItem(EVENTS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      saveToServer('events', next);
       return next;
     });
   }, []);
@@ -136,12 +141,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const saveOverrides = (o: Record<string, MemberOverride>) => {
     setMemberOverrides(o);
-    try { localStorage.setItem(OVERRIDES_KEY, JSON.stringify(o)); } catch { /* ignore */ }
+    saveToServer('memberOverrides', o);
   };
 
   const saveAdded = (a: AddedMember[]) => {
     setAddedMembers(a);
-    try { localStorage.setItem(ADDED_KEY, JSON.stringify(a)); } catch { /* ignore */ }
+    saveToServer('addedMembers', a);
   };
 
   const getMemberStatus = useCallback((contactId: string): 'active' | 'dropped' => {
@@ -153,15 +158,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [memberOverrides]);
 
   const dropMember = useCallback((contactId: string, date: string) => {
-    const next = { ...memberOverrides, [contactId]: { status: 'dropped' as const, statusDate: date } };
+    const next = { ...memberOverridesRef.current, [contactId]: { status: 'dropped' as const, statusDate: date } };
     saveOverrides(next);
-  }, [memberOverrides]);
+  }, []);
 
   const reactivateMember = useCallback((contactId: string) => {
-    const next = { ...memberOverrides };
+    const next = { ...memberOverridesRef.current };
     delete next[contactId];
     saveOverrides(next);
-  }, [memberOverrides]);
+  }, []);
 
   const addNewMember = useCallback((firstName: string, lastName: string, joinDate: string) => {
     const contactId = `added-${Date.now()}`;
@@ -172,7 +177,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       contactId,
       joinDate,
     };
-    const next = [...addedMembers, member];
+    const next = [...addedMembersRef.current, member];
     saveAdded(next);
     // Also create empty attendance records for this member
     setAttendance(prev => {
@@ -182,13 +187,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         members: [...prev.members, { firstName: member.firstName, lastName: member.lastName, fullName: member.fullName, contactId }],
         records: { ...prev.records, [contactId]: {} },
       };
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+      saveToServer('attendanceData', updated);
       return updated;
     });
-  }, [addedMembers]);
+  }, []);
 
   const removeAddedMember = useCallback((contactId: string) => {
-    const next = addedMembers.filter(m => m.contactId !== contactId);
+    const next = addedMembersRef.current.filter(m => m.contactId !== contactId);
     saveAdded(next);
     // Also remove from attendance data
     setAttendance(prev => {
@@ -198,10 +203,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         members: prev.members.filter(m => m.contactId !== contactId),
         records: Object.fromEntries(Object.entries(prev.records).filter(([k]) => k !== contactId)),
       };
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+      saveToServer('attendanceData', updated);
       return updated;
     });
-  }, [addedMembers]);
+  }, []);
 
   // ── Computed member lists ──
 
@@ -232,6 +237,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       memberOverrides, addedMembers, allMembers, activeMembers, droppedMembers,
       getMemberStatus, getMemberOverride,
       dropMember, reactivateMember, addNewMember, removeAddedMember,
+      loading,
     }}>
       {children}
     </DataContext.Provider>
