@@ -470,106 +470,201 @@ function EventModal({
 function LetterModal({ member, events, onClose }: { member: MemberHours; events: CommunityEvent[]; onClose: () => void }) {
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+
+    const logoUrl = `${origin}/letterhead/marjcc-logo.jpeg`;
+    const gmjfUrl = `${origin}/letterhead/gmjf-logo.png`;
+    const uwUrl = `${origin}/letterhead/united-way-logo.png`;
+    const jccaUrl = `${origin}/letterhead/jcc-assoc-logo.jpg`;
 
     printWindow.document.write(`
 <!DOCTYPE html>
 <html>
 <head>
   <title>Community Hours - ${member.fullName}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;0,900;1,400&family=Trebuchet+MS&display=swap" rel="stylesheet">
   <style>
-    @page { size: letter; margin: 0.8in 1in; }
-    body { font-family: 'Georgia', serif; color: #1a1a1a; line-height: 1.6; margin: 0; padding: 40px 60px; }
-    .header { text-align: center; border-bottom: 2px solid #1B2A6B; padding-bottom: 20px; margin-bottom: 30px; }
-    .logo-text { font-size: 24px; font-weight: bold; color: #1B2A6B; letter-spacing: 2px; }
-    .logo-sub { font-size: 11px; color: #5A6472; letter-spacing: 1px; margin-top: 4px; }
-    .org-name { font-size: 13px; color: #1B2A6B; margin-top: 8px; font-weight: 600; }
-    .date { text-align: right; margin-bottom: 24px; font-size: 13px; color: #5A6472; }
-    .ref { font-size: 13px; color: #5A6472; margin-bottom: 24px; }
-    .ref strong { color: #1a1a1a; }
-    .salutation { font-size: 14px; margin-bottom: 20px; }
-    .body { font-size: 14px; text-align: justify; margin-bottom: 16px; }
-    .body strong { color: #1B2A6B; }
-    .breakdown { margin: 20px 0; padding: 16px 20px; background: #f8f7f5; border-radius: 8px; border-left: 3px solid #1B2A6B; }
-    .breakdown h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #5A6472; margin: 0 0 10px; }
-    .breakdown-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
-    .breakdown-row.total { border-top: 1px solid #D8E1EA; padding-top: 8px; margin-top: 8px; font-weight: bold; color: #1B2A6B; }
-    .signature { margin-top: 50px; }
-    .sig-line { width: 200px; border-top: 1px solid #1a1a1a; margin-top: 40px; padding-top: 6px; }
-    .sig-name { font-size: 14px; font-weight: bold; }
-    .sig-title { font-size: 12px; color: #5A6472; }
-    .footer { position: fixed; bottom: 30px; left: 60px; right: 60px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; }
-    @media print { body { padding: 0; } .footer { position: fixed; } }
+    @page { size: letter; margin: 1in 0.5in 0.4in 1in; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; color: #1a1a1a; font-size: 9pt; line-height: 1.5; }
+
+    .page { position: relative; width: 8.5in; min-height: 11in; margin: 0 auto; }
+
+    /* ── Left Sidebar (Board of Directors) ── */
+    .sidebar {
+      position: absolute; top: 1.15in; left: 0.22in; width: 1.44in;
+      font-family: 'Roboto', 'Segoe UI', sans-serif; font-size: 7.5pt; color: #0493B6; line-height: 1.15;
+    }
+    .sidebar .section-title { font-weight: 900; font-size: 7.5pt; margin-top: 6px; margin-bottom: 2px; }
+    .sidebar .role { font-style: italic; font-size: 7pt; }
+    .sidebar .name { font-weight: 400; }
+    .sidebar .board-list { margin-top: 4px; font-size: 7pt; line-height: 1.25; }
+    .sidebar .partner-logos { margin-top: 14px; }
+    .sidebar .partner-logos img { display: block; margin-bottom: 6px; }
+
+    /* ── MARJCC Logo (top-left) ── */
+    .logo-container {
+      position: absolute; top: 0.75in; left: 0.30in; width: 1.21in; height: 0.77in; overflow: hidden;
+    }
+    .logo-container img {
+      width: 2.53in; height: 2.53in; object-fit: none;
+      object-position: -22.3% -34.6%;
+      clip-path: inset(34.6% 29.7% 34.9% 22.3%);
+      margin-top: -0.88in; margin-left: -0.56in;
+    }
+
+    /* ── Main Content ── */
+    .content {
+      margin-left: 1.80in; padding: 1in 0.5in 0 0;
+    }
+    .date { text-align: left; margin-bottom: 24px; font-size: 10pt; color: #333; }
+    .salutation { font-size: 10pt; margin-bottom: 16px; }
+    .body-text { font-size: 10pt; text-align: justify; margin-bottom: 14px; line-height: 1.6; }
+    .body-text strong { color: #0493B6; }
+    .breakdown { margin: 18px 0; padding: 14px 18px; background: #f5f9fa; border-left: 3px solid #0493B6; }
+    .breakdown h4 { font-family: 'Roboto', sans-serif; font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; color: #0493B6; margin: 0 0 8px; font-weight: 700; }
+    .breakdown-row { display: flex; justify-content: space-between; font-size: 9pt; padding: 3px 0; }
+    .breakdown-row.total { border-top: 1px solid #cde3e8; padding-top: 6px; margin-top: 6px; font-weight: bold; color: #0493B6; }
+    .signature { margin-top: 40px; }
+    .sig-line { width: 200px; border-top: 1px solid #333; margin-top: 36px; padding-top: 6px; }
+    .sig-name { font-size: 10pt; font-weight: bold; }
+    .sig-title { font-size: 9pt; color: #555; }
+
+    /* ── Footer ── */
+    .page-footer {
+      position: absolute; bottom: 0.15in; left: 0.375in; right: 0.375in;
+      font-family: 'Roboto', 'Segoe UI', sans-serif; color: #0493B6; text-align: center;
+    }
+    .footer-contact { font-size: 8pt; margin-bottom: 4px; }
+    .footer-disclaimer { font-size: 6pt; line-height: 1.3; }
+
+    @media print {
+      body { margin: 0; }
+      .page { width: auto; min-height: auto; page-break-after: always; }
+      .sidebar { position: fixed; }
+      .logo-container { position: fixed; }
+      .page-footer { position: fixed; bottom: 0; }
+    }
+    @media screen {
+      body { background: #e8e8e8; }
+      .page { background: white; box-shadow: 0 2px 12px rgba(0,0,0,0.15); margin: 20px auto; }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo-text">MARJCC</div>
-    <div class="logo-sub">MICHAEL-ANN RUSSELL JEWISH COMMUNITY CENTER</div>
-    <div class="org-name">Hebraica — Maccabi Tzair Miami</div>
-  </div>
-
-  <div class="date">${dateStr}</div>
-
-  <div class="ref">REF: <strong>${member.fullName}</strong></div>
-
-  <div class="salutation">To Whom It May Concern,</div>
-
-  <div class="body">
-    This letter is to certify that <strong>${member.fullName}</strong> has been an active participant
-    in the <strong>School of Madrichim (SOM)</strong> program at Maccabi Tzair Miami, a youth leadership
-    program of the Michael-Ann Russell Jewish Community Center (MARJCC) during the
-    <strong>2025-2026</strong> season.
-  </div>
-
-  <div class="body">
-    Through their participation in regular weekly sessions and community service events,
-    <strong>${member.fullName}</strong> has completed a total of
-    <strong>${member.totalHours} community service hours</strong>.
-  </div>
-
-  <div class="breakdown">
-    <h4>Hours Breakdown</h4>
-    <div class="breakdown-row">
-      <span>Regular Sessions (${member.regularSessions} sessions × 2h)</span>
-      <span>${member.regularHours} hours</span>
+  <div class="page">
+    <!-- MARJCC Logo -->
+    <div class="logo-container">
+      <img src="${logoUrl}" alt="MARJCC Logo" />
     </div>
-    ${member.eventBreakdown.map(e => `
-    <div class="breakdown-row">
-      <span>${e.eventName}</span>
-      <span>${e.hours} hours</span>
-    </div>`).join('')}
-    <div class="breakdown-row total">
-      <span>Total Community Service Hours</span>
-      <span>${member.totalHours} hours</span>
+
+    <!-- Left Sidebar - Board of Directors -->
+    <div class="sidebar">
+      <div class="section-title">Chair of the Board</div>
+      <div class="name">Joshua Weingard</div>
+
+      <div class="section-title">Executive Officers</div>
+      <div class="role">Chair-Elect</div>
+      <div class="name">Tama Rozovski</div>
+      <div class="role">Immediate Past Chair</div>
+      <div class="name">Elise Scheck-Bonwitt</div>
+      <div class="role">Vice Chair</div>
+      <div class="name">Nicole Gorin</div>
+      <div class="role">Vice Chair</div>
+      <div class="name">Daniel Halberstein</div>
+      <div class="role">Vice Chair of Operations</div>
+      <div class="name">Jacquie Weisblum</div>
+      <div class="role">At Large Member</div>
+      <div class="name">Joe Antebi</div>
+      <div class="role">At Large Member</div>
+      <div class="name">Leslie Sharpe</div>
+      <div class="role">Secretary</div>
+
+      <div class="section-title">Board of Directors</div>
+      <div class="board-list">
+        Joe Ackerman, Joel Bary, Amanda Bender, Suzette Diamond, Carlos Frost, Matthew Grosack, Uzi Hardoon, Alan Luchnick, Jason Morjain, Leon Ojalvo, Josef Preschel, Ariel Saban, Sami Shiro, Monica Sichel, Ofer Tamir, Eduardo Tobias, Flynn Turner, Alex Wolak
+      </div>
+
+      <div class="section-title">Chief Executive Officer</div>
+      <div class="name">Alan Sataloff</div>
+
+      <div class="partner-logos">
+        <img src="${gmjfUrl}" alt="Greater Miami Jewish Federation" style="width:1.24in;height:auto;" />
+        <img src="${uwUrl}" alt="United Way" style="width:0.82in;height:auto;" />
+        <img src="${jccaUrl}" alt="JCC Association" style="width:0.89in;height:auto;" />
+      </div>
     </div>
-  </div>
 
-  <div class="body">
-    We commend ${member.firstName} for their dedication and commitment to community service
-    and youth leadership development.
-  </div>
+    <!-- Main Content -->
+    <div class="content">
+      <div class="date">${dateStr}</div>
 
-  <div class="body">Sincerely,</div>
+      <div class="salutation">To Whom It May Concern,</div>
 
-  <div class="signature">
-    <div class="sig-line">
-      <div class="sig-name">Marleny Rosemberg</div>
-      <div class="sig-title">Hebraica Director</div>
-      <div class="sig-title">Michael-Ann Russell JCC</div>
+      <div class="body-text">
+        This letter is to certify that <strong>${member.fullName}</strong> has been an active participant
+        in the <strong>School of Madrichim (SOM)</strong> program at Maccabi Tzair Miami, a youth leadership
+        program of the Michael-Ann Russell Jewish Community Center (MARJCC) during the
+        <strong>2025-2026</strong> season.
+      </div>
+
+      <div class="body-text">
+        Through their participation in regular weekly sessions and community service events,
+        <strong>${member.fullName}</strong> has completed a total of
+        <strong>${member.totalHours} community service hours</strong>.
+      </div>
+
+      <div class="breakdown">
+        <h4>Hours Breakdown</h4>
+        <div class="breakdown-row">
+          <span>Regular Sessions (${member.regularSessions} sessions &times; 2h)</span>
+          <span>${member.regularHours} hours</span>
+        </div>
+        ${member.eventBreakdown.map(e => `
+        <div class="breakdown-row">
+          <span>${e.eventName}</span>
+          <span>${e.hours} hours</span>
+        </div>`).join('')}
+        <div class="breakdown-row total">
+          <span>Total Community Service Hours</span>
+          <span>${member.totalHours} hours</span>
+        </div>
+      </div>
+
+      <div class="body-text">
+        We commend ${member.firstName} for their dedication and commitment to community service
+        and youth leadership development.
+      </div>
+
+      <div class="body-text">Sincerely,</div>
+
+      <div class="signature">
+        <div class="sig-line">
+          <div class="sig-name">Marleny Rosemberg</div>
+          <div class="sig-title">Hebraica Director</div>
+          <div class="sig-title">Michael-Ann Russell JCC</div>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <div class="footer">
-    Michael-Ann Russell JCC · 18900 NE 25th Ave, North Miami Beach, FL 33180 · (305) 932-4200 · www.marjcc.org
+    <!-- Footer -->
+    <div class="page-footer">
+      <div class="footer-contact">
+        Michael-Ann Russell Jewish Community Center &bull; 18900 NE 25 Avenue, North Miami Beach, Florida 33180 &bull; 305.932.4200 &nbsp;*&nbsp; www.marjcc.org
+      </div>
+      <div class="footer-disclaimer">
+        A COPY OF THE OFFICIAL REGISTRATION (CH-1998) AND FINANCIAL INFORMATION MAY BE OBTAINED FROM THE DIVISION OF CONSUMER SERVICES BY CALLING TOLL-FREE 1-800-HELP-FLA (435-7352) WITHIN THE STATE. REGISTRATION DOES NOT IMPLY ENDORSEMENT, APPROVAL OR RECOMMENDATION BY THE STATE. Michael-Ann Russell Jewish Community Center, Inc. is a beneficiary agency of the Greater Miami Jewish Federation.
+      </div>
+    </div>
   </div>
 </body>
 </html>`);
     printWindow.document.close();
-    setTimeout(() => printWindow.print(), 500);
+    setTimeout(() => printWindow.print(), 800);
   };
 
   return (
