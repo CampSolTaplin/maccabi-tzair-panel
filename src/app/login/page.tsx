@@ -45,13 +45,13 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo & Brand */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4">
+          <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white/95 p-3 flex items-center justify-center shadow-lg">
             <Image
               src="/maccabi-logo.png"
               alt="Maccabi Tzair Miami"
               width={80}
               height={80}
-              className="w-20 h-20 object-contain brightness-0 invert"
+              className="w-full h-full object-contain"
               priority
             />
           </div>

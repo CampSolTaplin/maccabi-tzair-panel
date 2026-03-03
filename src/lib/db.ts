@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import bcrypt from 'bcryptjs';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -37,16 +38,18 @@ async function init() {
     )
   `);
 
-  // Seed default admin if no users exist
-  const { rows: countRows } = await pool.query('SELECT COUNT(*) FROM users');
-  if (parseInt(countRows[0].count) === 0) {
-    const bcrypt = await import('bcryptjs');
+  // Ensure default admin exists with correct password
+  try {
     const hash = await bcrypt.hash('M@rjcc2026', 10);
     await pool.query(
       `INSERT INTO users (username, password_hash, display_name, role, permissions)
-       VALUES ($1, $2, $3, $4, $5)`,
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (username) DO UPDATE SET password_hash = $2`,
       ['maccabiadmin', hash, 'Administrador', 'admin', JSON.stringify({ all: true })]
     );
+    console.log('✅ Default admin user ready');
+  } catch (seedErr) {
+    console.error('❌ Failed to seed admin user:', seedErr);
   }
 
   initialized = true;
