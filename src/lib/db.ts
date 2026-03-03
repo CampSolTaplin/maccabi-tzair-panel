@@ -26,9 +26,12 @@ async function init() {
     )
   `);
 
-  // Add enabled_dates column if missing (existing databases)
+  // Add columns if missing (existing databases)
   await pool.query(`
     ALTER TABLE app_state ADD COLUMN IF NOT EXISTS enabled_dates JSONB NOT NULL DEFAULT '[]'
+  `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE app_state ADD COLUMN IF NOT EXISTS roster_data JSONB
   `).catch(() => {});
 
   await pool.query(`
@@ -94,6 +97,7 @@ export async function loadAll() {
       memberOverrides: {},
       addedMembers: [],
       enabledDates: [],
+      rosterData: null,
     };
   }
   const row = rows[0];
@@ -103,6 +107,7 @@ export async function loadAll() {
     memberOverrides: row.member_overrides,
     addedMembers: row.added_members,
     enabledDates: row.enabled_dates || [],
+    rosterData: row.roster_data || null,
   };
 }
 
@@ -112,6 +117,7 @@ const COLUMN_MAP: Record<string, string> = {
   memberOverrides: 'member_overrides',
   addedMembers: 'added_members',
   enabledDates: 'enabled_dates',
+  rosterData: 'roster_data',
 };
 
 export async function saveKey(key: string, value: unknown) {

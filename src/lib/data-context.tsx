@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
-import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember } from '@/types';
+import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData } from '@/types';
 
 interface DataContextType {
   attendance: SOMAttendanceData | null;
@@ -34,6 +34,9 @@ interface DataContextType {
   // Enabled dates for attendance-taking
   enabledDates: string[];
   toggleEnabledDate: (date: string) => void;
+  // Roster
+  rosterData: RosterData | null;
+  importRoster: (data: RosterData) => void;
   loading: boolean;
 }
 
@@ -56,6 +59,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [memberOverrides, setMemberOverrides] = useState<Record<string, MemberOverride>>({});
   const [addedMembers, setAddedMembers] = useState<AddedMember[]>([]);
   const [enabledDates, setEnabledDates] = useState<string[]>([]);
+  const [rosterData, setRosterData] = useState<RosterData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Track latest values for save callbacks that need current state
@@ -82,6 +86,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         if (Array.isArray(data.addedMembers)) setAddedMembers(data.addedMembers);
         if (Array.isArray(data.enabledDates)) setEnabledDates(data.enabledDates);
+        if (data.rosterData) setRosterData(data.rosterData as RosterData);
       })
       .catch(err => console.error('Failed to load data', err))
       .finally(() => setLoading(false));
@@ -223,6 +228,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // ── Roster ──
+
+  const importRoster = useCallback((data: RosterData) => {
+    setRosterData(data);
+    saveToServer('rosterData', data);
+  }, []);
+
   // ── Computed member lists ──
 
   const allMembers = useMemo(() => {
@@ -253,6 +265,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       getMemberStatus, getMemberOverride,
       dropMember, reactivateMember, addNewMember, removeAddedMember,
       enabledDates, toggleEnabledDate,
+      rosterData, importRoster,
       loading,
     }}>
       {children}

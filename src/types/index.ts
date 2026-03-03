@@ -24,7 +24,14 @@ export interface Chanich {
   gradeLevel: string;
 }
 
-export type Program = 'SOM';
+export type Program = 'Katan' | 'Noar' | 'Pre-SOM' | 'SOM' | 'Trips' | 'Machanot';
+
+/** Full roster imported from Salesforce */
+export interface RosterData {
+  chanichim: Chanich[];
+  importedAt: string;
+  sourceFileName: string;
+}
 
 // ── SOM Attendance ──
 

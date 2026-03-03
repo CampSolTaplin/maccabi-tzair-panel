@@ -22,7 +22,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/attendance', label: 'Asistencia', icon: ClipboardCheck },
   { href: '/hours', label: 'Horas Comunitarias', icon: HandHeart },
-  { href: '/roster', label: 'Miembros', icon: Users },
+  { href: '/roster', label: 'Rosters', icon: Users },
   { section: 'Sistema' },
   { href: '/settings', label: 'Configuración', icon: Settings },
   { href: '/users', label: 'Usuarios', icon: Shield, adminOnly: true },
