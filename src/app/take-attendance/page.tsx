@@ -8,9 +8,19 @@ import {
   LogOut, Search, Check, Clock, X, ChevronDown, UserCircle, CalendarDays, Users, Star,
 } from 'lucide-react';
 
+/** Programs that are matched at program-level (not gradeLevel) */
+const PROGRAM_GROUPS = ['Pre-SOM', 'SOM', 'Trips', 'Machanot'];
+
 const GROUP_LABELS: Record<string, string> = {
-  Katan: 'Maccabi Katan',
-  Noar: 'Maccabi Noar',
+  Kinder: 'Maccabi Katan — Kinder',
+  '1st Grade': 'Maccabi Katan — 1st Grade',
+  '2nd Grade': 'Maccabi Katan — 2nd Grade',
+  '3rd Grade': 'Maccabi Katan — 3rd Grade',
+  '4th Grade': 'Maccabi Katan — 4th Grade',
+  '5th Grade': 'Maccabi Katan — 5th Grade',
+  '6th Grade': 'Maccabi Noar — 6th Grade',
+  '7th Grade': 'Maccabi Noar — 7th Grade',
+  '8th Grade': 'Maccabi Noar — 8th Grade',
   'Pre-SOM': 'Pre School of Madrichim',
   SOM: 'School of Madrichim',
   Trips: 'Trips & Seminars',
@@ -37,11 +47,26 @@ export default function TakeAttendancePage() {
   const userGroup = user?.group || 'SOM';
   const groupLabel = GROUP_LABELS[userGroup] || userGroup;
 
+  // Helper: check if a chanich matches the user's group
+  const matchesGroup = (gradeLevel: string, program: string) => {
+    // Program-level groups: match by program name
+    if (PROGRAM_GROUPS.includes(userGroup)) {
+      return program === userGroup;
+    }
+    // Grade-level groups: match by gradeLevel containing the group keyword
+    const gl = gradeLevel.toLowerCase();
+    const gk = userGroup.toLowerCase();
+    return gl.includes(gk);
+  };
+
   // Determine data source: roster-based or legacy SOM
   const useRosterFlow = useMemo(() => {
     if (!rosterData) return false;
-    const rosterMembers = rosterData.chanichim.filter(c => c.program === userGroup);
+    const rosterMembers = rosterData.chanichim.filter(c =>
+      matchesGroup(c.gradeLevel, c.program)
+    );
     return rosterMembers.length > 0;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rosterData, userGroup]);
 
   // Get member list
@@ -50,7 +75,7 @@ export default function TakeAttendancePage() {
       // Use Set to avoid duplicate contactIds within the same group
       const seen = new Set<string>();
       return rosterData.chanichim
-        .filter(c => c.program === userGroup)
+        .filter(c => matchesGroup(c.gradeLevel, c.program))
         .filter(c => {
           const id = c.contactId || c.courseOptionId;
           if (seen.has(id)) return false;
@@ -72,6 +97,7 @@ export default function TakeAttendancePage() {
       })).sort((a, b) => a.fullName.localeCompare(b.fullName));
     }
     return [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useRosterFlow, rosterData, userGroup, isImported, attendance, activeMembers]);
 
   // Sort enabled dates descending (most recent first), auto-select first

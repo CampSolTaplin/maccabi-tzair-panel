@@ -69,12 +69,23 @@ async function init() {
     console.error('❌ Failed to seed admin user:', seedErr);
   }
 
-  // Seed madrich users for ALL groups
+  // Seed madrich users for ALL sub-groups (one per grade level)
   const madrichGroups = [
-    { username: 'katan@marjcc.org', display: 'Madrichim Katan', group: 'Katan' },
-    { username: 'noar@marjcc.org', display: 'Madrichim Noar', group: 'Noar' },
+    // Katan area
+    { username: 'kinder@marjcc.org', display: 'Madrichim Kinder', group: 'Kinder' },
+    { username: '1stgrade@marjcc.org', display: 'Madrichim 1st Grade', group: '1st Grade' },
+    { username: '2ndgrade@marjcc.org', display: 'Madrichim 2nd Grade', group: '2nd Grade' },
+    { username: '3rdgrade@marjcc.org', display: 'Madrichim 3rd Grade', group: '3rd Grade' },
+    { username: '4thgrade@marjcc.org', display: 'Madrichim 4th Grade', group: '4th Grade' },
+    { username: '5thgrade@marjcc.org', display: 'Madrichim 5th Grade', group: '5th Grade' },
+    // Noar area
+    { username: '6thgrade@marjcc.org', display: 'Madrichim 6th Grade', group: '6th Grade' },
+    { username: '7thgrade@marjcc.org', display: 'Madrichim 7th Grade', group: '7th Grade' },
+    { username: '8thgrade@marjcc.org', display: 'Madrichim 8th Grade', group: '8th Grade' },
+    // Leadership area
     { username: 'presom@marjcc.org', display: 'Madrichim Pre-SOM', group: 'Pre-SOM' },
     { username: 'som@marjcc.org', display: 'Madrichim SOM', group: 'SOM' },
+    // Special Events
     { username: 'trips@marjcc.org', display: 'Madrichim Trips', group: 'Trips' },
     { username: 'machanot@marjcc.org', display: 'Madrichim Machanot', group: 'Machanot' },
   ];
@@ -191,12 +202,23 @@ export async function deleteUser(id: number) {
   return rowCount != null && rowCount > 0;
 }
 
-/** Map of madrich usernames to their group config */
+/** Map of madrich usernames to their group config (per sub-group/grade) */
 const MADRICH_ACCOUNTS: Record<string, { display: string; group: string }> = {
-  'katan@marjcc.org': { display: 'Madrichim Katan', group: 'Katan' },
-  'noar@marjcc.org': { display: 'Madrichim Noar', group: 'Noar' },
+  // Katan
+  'kinder@marjcc.org': { display: 'Madrichim Kinder', group: 'Kinder' },
+  '1stgrade@marjcc.org': { display: 'Madrichim 1st Grade', group: '1st Grade' },
+  '2ndgrade@marjcc.org': { display: 'Madrichim 2nd Grade', group: '2nd Grade' },
+  '3rdgrade@marjcc.org': { display: 'Madrichim 3rd Grade', group: '3rd Grade' },
+  '4thgrade@marjcc.org': { display: 'Madrichim 4th Grade', group: '4th Grade' },
+  '5thgrade@marjcc.org': { display: 'Madrichim 5th Grade', group: '5th Grade' },
+  // Noar
+  '6thgrade@marjcc.org': { display: 'Madrichim 6th Grade', group: '6th Grade' },
+  '7thgrade@marjcc.org': { display: 'Madrichim 7th Grade', group: '7th Grade' },
+  '8thgrade@marjcc.org': { display: 'Madrichim 8th Grade', group: '8th Grade' },
+  // Leadership
   'presom@marjcc.org': { display: 'Madrichim Pre-SOM', group: 'Pre-SOM' },
   'som@marjcc.org': { display: 'Madrichim SOM', group: 'SOM' },
+  // Special Events
   'trips@marjcc.org': { display: 'Madrichim Trips', group: 'Trips' },
   'machanot@marjcc.org': { display: 'Madrichim Machanot', group: 'Machanot' },
 };
