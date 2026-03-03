@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { loadAll, saveKey } from '@/lib/db';
+import { getSessionFromCookie } from '@/lib/auth';
 
 // GET /api/data — return all 4 fields
 export async function GET() {
+  const session = await getSessionFromCookie();
+  if (!session) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const data = await loadAll();
     return NextResponse.json(data);
@@ -15,6 +21,11 @@ export async function GET() {
 // PUT /api/data — update a single key
 // Body: { key: "attendanceData"|"events"|"memberOverrides"|"addedMembers", value: any }
 export async function PUT(req: Request) {
+  const session = await getSessionFromCookie();
+  if (!session) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
   try {
     const { key, value } = await req.json();
 

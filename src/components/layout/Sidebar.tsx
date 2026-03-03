@@ -10,8 +10,12 @@ import {
   HandHeart,
   Settings,
   ChevronLeft,
+  Shield,
+  LogOut,
+  UserCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
 
 const navItems = [
   { section: 'SOM' },
@@ -21,11 +25,13 @@ const navItems = [
   { href: '/roster', label: 'Miembros', icon: Users },
   { section: 'Sistema' },
   { href: '/settings', label: 'Configuración', icon: Settings },
+  { href: '/users', label: 'Usuarios', icon: Shield, adminOnly: true },
 ];
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   return (
     <nav
@@ -76,6 +82,10 @@ export default function Sidebar() {
           }
 
           if (!('href' in item) || !item.href) return null;
+
+          // Hide admin-only items from non-admins
+          if ('adminOnly' in item && item.adminOnly && user?.role !== 'admin') return null;
+
           const Icon = item.icon!;
           const isActive = pathname === item.href;
 
@@ -107,7 +117,33 @@ export default function Sidebar() {
         })}
       </div>
 
-      {/* Footer */}
+      {/* User info + Logout */}
+      {user && (
+        <div
+          className={cn(
+            'px-3 py-3 border-t border-white/[0.08] transition-opacity duration-300',
+            collapsed && 'opacity-0 pointer-events-none'
+          )}
+        >
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-8 h-8 rounded-full bg-[#C5E3F6]/20 flex items-center justify-center flex-shrink-0">
+              <UserCircle className="w-4 h-4 text-[#C5E3F6]" />
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-sm text-[#C5E3F6] font-medium truncate">{user.displayName}</p>
+              <p className="text-[0.65rem] text-white/30 truncate">{user.role}</p>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+          >
+            <LogOut className="w-3.5 h-3.5" /> Cerrar sesión
+          </button>
+        </div>
+      )}
+
+      {/* Collapse toggle */}
       <div className="p-4 border-t border-white/[0.08]">
         <button
           onClick={() => setCollapsed(!collapsed)}

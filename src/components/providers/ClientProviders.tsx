@@ -1,6 +1,7 @@
 'use client';
 
 import { DataProvider, useData } from '@/lib/data-context';
+import { AuthProvider } from '@/lib/auth-context';
 import ImportModal from '@/components/import/ImportModal';
 
 function LoadingGate({ children }: { children: React.ReactNode }) {
@@ -22,11 +23,13 @@ function LoadingGate({ children }: { children: React.ReactNode }) {
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
-    <DataProvider>
-      <LoadingGate>
-        {children}
-        <ImportModal />
-      </LoadingGate>
-    </DataProvider>
+    <AuthProvider>
+      <DataProvider>
+        <LoadingGate>
+          {children}
+          <ImportModal />
+        </LoadingGate>
+      </DataProvider>
+    </AuthProvider>
   );
 }

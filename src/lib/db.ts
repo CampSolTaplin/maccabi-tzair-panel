@@ -7,11 +7,12 @@ const pool = new Pool({
     : undefined,
 });
 
-// Auto-create table on first use
+// Auto-create tables on first use
 let initialized = false;
 
 async function init() {
   if (initialized) return;
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS app_state (
       id TEXT PRIMARY KEY DEFAULT 'singleton',
@@ -22,8 +23,36 @@ async function init() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'admin',
+      permissions JSONB NOT NULL DEFAULT '{}',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  // Seed default admin if no users exist
+  const { rows: countRows } = await pool.query('SELECT COUNT(*) FROM users');
+  if (parseInt(countRows[0].count) === 0) {
+    const bcrypt = await import('bcryptjs');
+    const hash = await bcrypt.hash('M@rjcc2026', 10);
+    await pool.query(
+      `INSERT INTO users (username, password_hash, display_name, role, permissions)
+       VALUES ($1, $2, $3, $4, $5)`,
+      ['maccabiadmin', hash, 'Administrador', 'admin', JSON.stringify({ all: true })]
+    );
+  }
+
   initialized = true;
 }
+
+// ── App State ──
 
 export async function loadAll() {
   await init();
@@ -65,4 +94,46 @@ export async function saveKey(key: string, value: unknown) {
      ON CONFLICT (id) DO UPDATE SET ${col} = $1, updated_at = NOW()`,
     [JSON.stringify(value)]
   );
+}
+
+// ── Users ──
+
+export async function findUserByUsername(username: string) {
+  await init();
+  const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+  return rows[0] || null;
+}
+
+export async function findUserById(id: number) {
+  await init();
+  const { rows } = await pool.query(
+    'SELECT id, username, display_name, role, permissions, created_at, updated_at FROM users WHERE id = $1',
+    [id]
+  );
+  return rows[0] || null;
+}
+
+export async function listUsers() {
+  await init();
+  const { rows } = await pool.query(
+    'SELECT id, username, display_name, role, permissions, created_at, updated_at FROM users ORDER BY created_at ASC'
+  );
+  return rows;
+}
+
+export async function createUser(username: string, passwordHash: string, displayName: string, role: string) {
+  await init();
+  const { rows } = await pool.query(
+    `INSERT INTO users (username, password_hash, display_name, role)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, username, display_name, role, created_at`,
+    [username, passwordHash, displayName, role]
+  );
+  return rows[0];
+}
+
+export async function deleteUser(id: number) {
+  await init();
+  const { rowCount } = await pool.query('DELETE FROM users WHERE id = $1', [id]);
+  return rowCount != null && rowCount > 0;
 }
