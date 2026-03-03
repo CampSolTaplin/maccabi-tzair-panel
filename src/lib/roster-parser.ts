@@ -132,8 +132,17 @@ export function parseRoster(buffer: ArrayBuffer, fileName: string): RosterData {
     return pi !== 0 ? pi : a.fullName.localeCompare(b.fullName);
   });
 
+  // Deduplicate by contactId — keep first occurrence (main program wins due to sort order)
+  const seen = new Set<string>();
+  const unique = chanichim.filter(c => {
+    if (!c.contactId) return true;
+    if (seen.has(c.contactId)) return false;
+    seen.add(c.contactId);
+    return true;
+  });
+
   return {
-    chanichim,
+    chanichim: unique,
     importedAt: new Date().toISOString(),
     sourceFileName: fileName,
   };
@@ -153,8 +162,17 @@ export function mergeRoster(existing: RosterData, incoming: RosterData): RosterD
     return pi !== 0 ? pi : a.fullName.localeCompare(b.fullName);
   });
 
+  // Deduplicate by contactId — keep first occurrence (main program wins due to sort order)
+  const seen = new Set<string>();
+  const unique = merged.filter(c => {
+    if (!c.contactId) return true;
+    if (seen.has(c.contactId)) return false;
+    seen.add(c.contactId);
+    return true;
+  });
+
   return {
-    chanichim: merged,
+    chanichim: unique,
     importedAt: incoming.importedAt,
     sourceFileName: incoming.sourceFileName,
   };
