@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 
 const navItems = [
-  { section: 'SOM' },
+  { section: 'Maccabi Tzair' },
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/attendance', label: 'Asistencia', icon: ClipboardCheck },
   { href: '/hours', label: 'Horas Comunitarias', icon: HandHeart },
@@ -57,7 +57,7 @@ export default function Sidebar() {
           )}
         >
           <h1 className="font-serif text-[1.1rem] font-bold text-[#C5E3F6] leading-tight tracking-wide">
-            School of Madrichim
+            Maccabi Tzair
           </h1>
           <span className="text-[0.7rem] text-white/40 uppercase tracking-[0.12em] font-medium">
             Maccabi Tzair Miami

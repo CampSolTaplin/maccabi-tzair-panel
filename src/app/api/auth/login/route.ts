@@ -16,9 +16,9 @@ export async function POST(req: Request) {
 
     let user = await findUserByUsername(username);
 
-    // If user not found and it's the SOM madrich email, try to seed it
-    if (!user && username === 'som@marjcc.org') {
-      await ensureMadrichUser();
+    // If user not found and it's a known madrich email, try to seed it
+    if (!user && username.endsWith('@marjcc.org')) {
+      await ensureMadrichUser(username);
       user = await findUserByUsername(username);
     }
 

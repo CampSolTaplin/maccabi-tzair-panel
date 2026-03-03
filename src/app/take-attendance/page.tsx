@@ -3,20 +3,76 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
-import { SOMAttendanceValue } from '@/types';
+import { AttendanceValue, SOMAttendanceValue } from '@/types';
 import {
   LogOut, Search, Check, Clock, X, ChevronDown, UserCircle, CalendarDays, Users, Star,
 } from 'lucide-react';
+
+const GROUP_LABELS: Record<string, string> = {
+  Katan: 'Maccabi Katan',
+  Noar: 'Maccabi Noar',
+  'Pre-SOM': 'Pre School of Madrichim',
+  SOM: 'School of Madrichim',
+  Trips: 'Trips & Seminars',
+  Machanot: 'Machanot',
+};
+
+interface MemberEntry {
+  fullName: string;
+  contactId: string;
+  gradeLevel?: string;
+}
 
 export default function TakeAttendancePage() {
   const { user, logout } = useAuth();
   const {
     attendance, isImported, updateAttendanceCell,
     activeMembers, enabledDates, events, loading,
+    rosterData, groupAttendance, updateGroupAttendance,
   } = useData();
 
   const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const userGroup = user?.group || 'SOM';
+  const groupLabel = GROUP_LABELS[userGroup] || userGroup;
+
+  // Determine data source: roster-based or legacy SOM
+  const useRosterFlow = useMemo(() => {
+    if (!rosterData) return false;
+    const rosterMembers = rosterData.chanichim.filter(c => c.program === userGroup);
+    return rosterMembers.length > 0;
+  }, [rosterData, userGroup]);
+
+  // Get member list
+  const allGroupMembers: MemberEntry[] = useMemo(() => {
+    if (useRosterFlow && rosterData) {
+      // Use Set to avoid duplicate contactIds within the same group
+      const seen = new Set<string>();
+      return rosterData.chanichim
+        .filter(c => c.program === userGroup)
+        .filter(c => {
+          const id = c.contactId || c.courseOptionId;
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        })
+        .map(c => ({
+          fullName: c.fullName,
+          contactId: c.contactId || c.courseOptionId,
+          gradeLevel: c.gradeLevel,
+        }))
+        .sort((a, b) => a.fullName.localeCompare(b.fullName));
+    }
+    // Legacy SOM flow
+    if (isImported && attendance) {
+      return activeMembers.map(m => ({
+        fullName: `${m.lastName}, ${m.firstName}`,
+        contactId: m.contactId,
+      })).sort((a, b) => a.fullName.localeCompare(b.fullName));
+    }
+    return [];
+  }, [useRosterFlow, rosterData, userGroup, isImported, attendance, activeMembers]);
 
   // Sort enabled dates descending (most recent first), auto-select first
   const sortedEnabledDates = useMemo(() => {
@@ -36,44 +92,66 @@ export default function TakeAttendancePage() {
   // Filter and sort members
   const filteredMembers = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let list = activeMembers;
+    let list = allGroupMembers;
     if (q) {
       list = list.filter(m =>
         m.fullName.toLowerCase().includes(q) ||
-        m.firstName.toLowerCase().includes(q) ||
-        m.lastName.toLowerCase().includes(q)
+        (m.gradeLevel && m.gradeLevel.toLowerCase().includes(q))
       );
     }
-    return [...list].sort((a, b) => a.lastName.localeCompare(b.lastName));
-  }, [activeMembers, search]);
+    return list;
+  }, [allGroupMembers, search]);
 
   // Get attendance value for a member on the selected date
-  const getVal = (contactId: string): SOMAttendanceValue => {
-    if (!attendance || !effectiveDate) return null;
+  const getVal = (contactId: string): AttendanceValue => {
+    if (!effectiveDate) return null;
+    if (useRosterFlow) {
+      return groupAttendance[userGroup]?.[contactId]?.[effectiveDate] ?? null;
+    }
+    // Legacy SOM
+    if (!attendance) return null;
     const rec = attendance.records[contactId];
     if (!rec) return null;
     return rec[effectiveDate] ?? null;
   };
 
   // Set attendance for a member
-  const setAttendance = (contactId: string, val: SOMAttendanceValue) => {
+  const setAttendanceValue = (contactId: string, val: AttendanceValue) => {
     if (!effectiveDate) return;
-    updateAttendanceCell(contactId, effectiveDate, val);
+    if (useRosterFlow) {
+      updateGroupAttendance(userGroup, contactId, effectiveDate, val);
+    } else {
+      updateAttendanceCell(contactId, effectiveDate, val as SOMAttendanceValue);
+    }
   };
 
   // Stats for the selected date
   const stats = useMemo(() => {
-    if (!attendance || !effectiveDate) return { present: 0, late: 0, absent: 0, unmarked: 0 };
+    if (!effectiveDate) return { present: 0, late: 0, absent: 0, unmarked: 0 };
     let present = 0, late = 0, absent = 0, unmarked = 0;
-    for (const m of activeMembers) {
-      const v = (attendance.records[m.contactId] || {})[effectiveDate];
+    for (const m of allGroupMembers) {
+      const v = getVal(m.contactId);
       if (v === true) present++;
       else if (v === 'late') late++;
       else if (v === false) absent++;
       else unmarked++;
     }
     return { present, late, absent, unmarked };
-  }, [attendance, effectiveDate, activeMembers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveDate, allGroupMembers, groupAttendance, attendance, useRosterFlow, userGroup]);
+
+  // Sub-group sections for roster flow
+  const gradeLevelSections = useMemo(() => {
+    if (!useRosterFlow) return null;
+    const sections = new Map<string, MemberEntry[]>();
+    for (const m of filteredMembers) {
+      const gl = m.gradeLevel || 'Sin clasificar';
+      if (!sections.has(gl)) sections.set(gl, []);
+      sections.get(gl)!.push(m);
+    }
+    if (sections.size <= 1) return null;
+    return Array.from(sections.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [useRosterFlow, filteredMembers]);
 
   const formatDateDisplay = (iso: string) => {
     const d = new Date(iso + 'T12:00:00');
@@ -82,6 +160,8 @@ export default function TakeAttendancePage() {
     const month = d.toLocaleDateString('es-ES', { month: 'long' });
     return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${day} de ${month}`;
   };
+
+  const hasData = allGroupMembers.length > 0;
 
   if (loading) {
     return (
@@ -103,7 +183,7 @@ export default function TakeAttendancePage() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-[#C5E3F6] leading-tight">Asistencia</h1>
-              <span className="text-[0.65rem] text-white/40">School of Madrichim</span>
+              <span className="text-[0.65rem] text-white/40">{groupLabel}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -120,19 +200,19 @@ export default function TakeAttendancePage() {
       </header>
 
       <div className="max-w-lg mx-auto px-4 py-4">
-        {/* No data imported */}
-        {(!isImported || !attendance) && (
+        {/* No data */}
+        {!hasData && (
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-8 text-center mt-8">
             <Users className="w-12 h-12 text-[#D8E1EA] mx-auto mb-3" />
             <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Sin datos</h3>
             <p className="text-sm text-[#5A6472]">
-              El administrador aun no ha importado la lista de miembros.
+              El administrador aun no ha importado la lista de {groupLabel}.
             </p>
           </div>
         )}
 
         {/* No enabled dates */}
-        {isImported && attendance && enabledDates.length === 0 && (
+        {hasData && enabledDates.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-8 text-center mt-8">
             <CalendarDays className="w-12 h-12 text-[#D8E1EA] mx-auto mb-3" />
             <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Sin fechas habilitadas</h3>
@@ -143,7 +223,7 @@ export default function TakeAttendancePage() {
         )}
 
         {/* Main attendance taking UI */}
-        {isImported && attendance && enabledDates.length > 0 && effectiveDate && (
+        {hasData && enabledDates.length > 0 && effectiveDate && (
           <>
             {/* Date selector */}
             {sortedEnabledDates.length > 1 ? (
@@ -216,31 +296,53 @@ export default function TakeAttendancePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6472]" />
               <input
                 type="text"
-                placeholder="Buscar miembro..."
+                placeholder="Buscar participante..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[#D8E1EA] text-sm bg-white focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
               />
             </div>
 
-            {/* Member list */}
-            <div className="space-y-2">
-              {filteredMembers.map(member => {
-                const val = getVal(member.contactId);
-                return (
+            {/* Member list with grade-level sections */}
+            {gradeLevelSections ? (
+              <div className="space-y-4">
+                {gradeLevelSections.map(([sectionName, members]) => (
+                  <div key={sectionName}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[0.7rem] font-semibold text-[#5A6472] uppercase tracking-wider">
+                        {sectionName}
+                      </span>
+                      <span className="text-[0.6rem] text-[#999]">({members.length})</span>
+                    </div>
+                    <div className="space-y-2">
+                      {members.map(member => (
+                        <MemberRow
+                          key={member.contactId}
+                          name={member.fullName}
+                          value={getVal(member.contactId)}
+                          onSet={(v) => setAttendanceValue(member.contactId, v)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredMembers.map(member => (
                   <MemberRow
                     key={member.contactId}
-                    name={`${member.lastName}, ${member.firstName}`}
-                    value={val}
-                    onSet={(v) => setAttendance(member.contactId, v)}
+                    name={member.fullName}
+                    value={getVal(member.contactId)}
+                    onSet={(v) => setAttendanceValue(member.contactId, v)}
                   />
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
 
             {filteredMembers.length === 0 && (
               <div className="text-center py-8 text-sm text-[#5A6472]">
-                No se encontraron miembros
+                No se encontraron participantes
               </div>
             )}
 
@@ -256,8 +358,8 @@ export default function TakeAttendancePage() {
 // ── Member Row Component ──
 function MemberRow({ name, value, onSet }: {
   name: string;
-  value: SOMAttendanceValue;
-  onSet: (v: SOMAttendanceValue) => void;
+  value: AttendanceValue;
+  onSet: (v: AttendanceValue) => void;
 }) {
   return (
     <div className={`bg-white rounded-xl border transition-all ${

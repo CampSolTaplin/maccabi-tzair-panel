@@ -41,29 +41,29 @@ const ROSTER_COLUMNS: ColumnDef[] = [
   { key: 'fullCourseOption', label: 'Full Course Option', defaultVisible: false, minWidth: '300px' },
 ];
 
-// ── Program tabs ──
+// ── Area definitions (top-level grouping) ──
 
-interface ProgramTab {
+interface AreaDef {
   key: string;
   label: string;
+  programs: Program[];
   color: string;
   activeBg: string;
 }
 
-const PROGRAM_TABS: ProgramTab[] = [
-  { key: 'all', label: 'Todos', color: 'text-[#1B2A6B]', activeBg: 'bg-[#1B2A6B] text-white' },
-  { key: 'Katan', label: 'Katan', color: 'text-blue-700', activeBg: 'bg-blue-600 text-white' },
-  { key: 'Noar', label: 'Noar', color: 'text-purple-700', activeBg: 'bg-purple-600 text-white' },
-  { key: 'Pre-SOM', label: 'Pre-SOM', color: 'text-amber-700', activeBg: 'bg-amber-600 text-white' },
-  { key: 'SOM', label: 'SOM', color: 'text-green-700', activeBg: 'bg-green-600 text-white' },
-  { key: 'Trips', label: 'Trips', color: 'text-rose-700', activeBg: 'bg-rose-600 text-white' },
-  { key: 'Machanot', label: 'Machanot', color: 'text-cyan-700', activeBg: 'bg-cyan-600 text-white' },
+const AREAS: AreaDef[] = [
+  { key: 'all', label: 'Todos', programs: ['Katan', 'Noar', 'Pre-SOM', 'SOM', 'Trips', 'Machanot'], color: 'text-[#1B2A6B]', activeBg: 'bg-[#1B2A6B] text-white' },
+  { key: 'katan', label: 'Katan (K-5)', programs: ['Katan'], color: 'text-blue-700', activeBg: 'bg-blue-600 text-white' },
+  { key: 'noar', label: 'Noar (6-8)', programs: ['Noar'], color: 'text-purple-700', activeBg: 'bg-purple-600 text-white' },
+  { key: 'leadership', label: 'Leadership', programs: ['Pre-SOM', 'SOM'], color: 'text-amber-700', activeBg: 'bg-amber-600 text-white' },
+  { key: 'special', label: 'Special Events', programs: ['Trips', 'Machanot'], color: 'text-rose-700', activeBg: 'bg-rose-600 text-white' },
 ];
 
 export default function RosterPage() {
   const { rosterData, loading } = useData();
   const [showImport, setShowImport] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState('all');
+  const [selectedArea, setSelectedArea] = useState('all');
+  const [selectedSubGroup, setSelectedSubGroup] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [visibleCols, setVisibleCols] = useState<Set<string>>(
     () => new Set(ROSTER_COLUMNS.filter(c => c.defaultVisible).map(c => c.key))
@@ -82,14 +82,72 @@ export default function RosterPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showColMenu]);
 
+  // Reset sub-group when changing area
+  const handleAreaChange = (areaKey: string) => {
+    setSelectedArea(areaKey);
+    setSelectedSubGroup(null);
+  };
+
+  // Current area config
+  const currentArea = AREAS.find(a => a.key === selectedArea) || AREAS[0];
+
+  // Area counts
+  const areaCounts = useMemo(() => {
+    if (!rosterData) return {};
+    const counts: Record<string, number> = { all: rosterData.chanichim.length };
+    for (const area of AREAS) {
+      if (area.key !== 'all') {
+        counts[area.key] = rosterData.chanichim.filter(c =>
+          area.programs.includes(c.program)
+        ).length;
+      }
+    }
+    return counts;
+  }, [rosterData]);
+
+  // Sub-groups for current area (unique gradeLevel values)
+  const subGroups = useMemo(() => {
+    if (!rosterData || selectedArea === 'all') return [];
+    const members = rosterData.chanichim.filter(c =>
+      currentArea.programs.includes(c.program)
+    );
+    const groups = new Map<string, number>();
+    for (const m of members) {
+      const gl = m.gradeLevel || 'Sin clasificar';
+      groups.set(gl, (groups.get(gl) || 0) + 1);
+    }
+    return Array.from(groups.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([name, count]) => ({ name, count }));
+  }, [rosterData, selectedArea, currentArea]);
+
+  // For multi-program areas (Leadership, Special Events), also show program-level pills
+  const programSubTabs = useMemo(() => {
+    if (!rosterData || selectedArea === 'all') return [];
+    if (currentArea.programs.length <= 1) return [];
+    return currentArea.programs.map(p => ({
+      program: p,
+      count: rosterData.chanichim.filter(c => c.program === p).length,
+    })).filter(p => p.count > 0);
+  }, [rosterData, selectedArea, currentArea]);
+
   // Filter data
   const filteredData = useMemo(() => {
     if (!rosterData) return [];
     let list = rosterData.chanichim;
 
-    // Filter by group
-    if (selectedGroup !== 'all') {
-      list = list.filter(c => c.program === selectedGroup);
+    // Filter by area programs
+    if (selectedArea !== 'all') {
+      list = list.filter(c => currentArea.programs.includes(c.program));
+    }
+
+    // Filter by sub-group (gradeLevel or program)
+    if (selectedSubGroup) {
+      if (currentArea.programs.includes(selectedSubGroup as Program)) {
+        list = list.filter(c => c.program === selectedSubGroup);
+      } else {
+        list = list.filter(c => (c.gradeLevel || 'Sin clasificar') === selectedSubGroup);
+      }
     }
 
     // Filter by search
@@ -107,17 +165,7 @@ export default function RosterPage() {
     }
 
     return list;
-  }, [rosterData, selectedGroup, search]);
-
-  // Group counts for tabs
-  const groupCounts = useMemo(() => {
-    if (!rosterData) return {};
-    const counts: Record<string, number> = { all: rosterData.chanichim.length };
-    for (const c of rosterData.chanichim) {
-      counts[c.program] = (counts[c.program] || 0) + 1;
-    }
-    return counts;
-  }, [rosterData]);
+  }, [rosterData, selectedArea, selectedSubGroup, currentArea, search]);
 
   // Active columns
   const activeCols = useMemo(() => {
@@ -154,7 +202,7 @@ export default function RosterPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const groupLabel = selectedGroup === 'all' ? 'todos' : selectedGroup;
+    const groupLabel = selectedArea === 'all' ? 'todos' : selectedSubGroup || selectedArea;
     a.download = `roster-${groupLabel}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
@@ -263,23 +311,23 @@ export default function RosterPage() {
                 </div>
               </div>
 
-              {/* Group tabs */}
+              {/* Area tabs (top level) */}
               <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                {PROGRAM_TABS.map(tab => {
-                  const count = groupCounts[tab.key] || 0;
-                  if (tab.key !== 'all' && count === 0) return null;
-                  const isActive = selectedGroup === tab.key;
+                {AREAS.map(area => {
+                  const count = areaCounts[area.key] || 0;
+                  if (area.key !== 'all' && count === 0) return null;
+                  const isActive = selectedArea === area.key;
                   return (
                     <button
-                      key={tab.key}
-                      onClick={() => setSelectedGroup(tab.key)}
+                      key={area.key}
+                      onClick={() => handleAreaChange(area.key)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         isActive
-                          ? tab.activeBg + ' shadow-sm'
-                          : 'bg-[#F2F0EC] ' + tab.color + ' hover:bg-[#E8E5DF]'
+                          ? area.activeBg + ' shadow-sm'
+                          : 'bg-[#F2F0EC] ' + area.color + ' hover:bg-[#E8E5DF]'
                       }`}
                     >
-                      {tab.label}
+                      {area.label}
                       <span className={`ml-1.5 ${isActive ? 'opacity-80' : 'opacity-60'}`}>
                         {count}
                       </span>
@@ -287,6 +335,58 @@ export default function RosterPage() {
                   );
                 })}
               </div>
+
+              {/* Sub-group pills (second level) */}
+              {selectedArea !== 'all' && (programSubTabs.length > 0 || subGroups.length > 0) && (
+                <div className="flex flex-wrap items-center gap-1.5 mb-3 pl-1">
+                  {/* "Todos" pill for the area */}
+                  <button
+                    onClick={() => setSelectedSubGroup(null)}
+                    className={`px-2.5 py-1 rounded-md text-[0.7rem] font-medium transition-all ${
+                      !selectedSubGroup
+                        ? 'bg-[#1A1A2E] text-white shadow-sm'
+                        : 'bg-[#F2F0EC] text-[#5A6472] hover:bg-[#E8E5DF]'
+                    }`}
+                  >
+                    Todos ({areaCounts[selectedArea] || 0})
+                  </button>
+
+                  {/* Program sub-tabs for multi-program areas (Leadership, Special Events) */}
+                  {programSubTabs.map(p => (
+                    <button
+                      key={p.program}
+                      onClick={() => setSelectedSubGroup(p.program)}
+                      className={`px-2.5 py-1 rounded-md text-[0.7rem] font-medium transition-all ${
+                        selectedSubGroup === p.program
+                          ? 'bg-[#1A1A2E] text-white shadow-sm'
+                          : 'bg-[#F2F0EC] text-[#5A6472] hover:bg-[#E8E5DF]'
+                      }`}
+                    >
+                      {p.program} ({p.count})
+                    </button>
+                  ))}
+
+                  {/* Separator for multi-program areas */}
+                  {programSubTabs.length > 0 && subGroups.length > 0 && (
+                    <span className="text-[#D8E1EA] mx-0.5">|</span>
+                  )}
+
+                  {/* Grade-level sub-groups */}
+                  {subGroups.map(sg => (
+                    <button
+                      key={sg.name}
+                      onClick={() => setSelectedSubGroup(sg.name)}
+                      className={`px-2.5 py-1 rounded-md text-[0.7rem] font-medium transition-all ${
+                        selectedSubGroup === sg.name
+                          ? 'bg-[#1A1A2E] text-white shadow-sm'
+                          : 'bg-[#F2F0EC] text-[#5A6472] hover:bg-[#E8E5DF]'
+                      }`}
+                    >
+                      {sg.name} ({sg.count})
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Search */}
               <div className="relative">
@@ -314,7 +414,7 @@ export default function RosterPage() {
                     <th className="text-left py-2.5 px-3 text-[0.65rem] font-semibold uppercase tracking-wider text-[#5A6472] w-10">
                       #
                     </th>
-                    {selectedGroup === 'all' && (
+                    {selectedArea === 'all' && (
                       <th className="text-left py-2.5 px-3 text-[0.65rem] font-semibold uppercase tracking-wider text-[#5A6472]" style={{ minWidth: '90px' }}>
                         Programa
                       </th>
@@ -337,7 +437,7 @@ export default function RosterPage() {
                       className="border-b border-[#D8E1EA]/50 last:border-0 hover:bg-[#F8F7F5] transition-colors"
                     >
                       <td className="py-2.5 px-3 text-[#5A6472] text-xs">{i + 1}</td>
-                      {selectedGroup === 'all' && (
+                      {selectedArea === 'all' && (
                         <td className="py-2.5 px-3">
                           <ProgramBadge program={c.program} />
                         </td>

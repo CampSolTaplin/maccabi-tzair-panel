@@ -33,7 +33,15 @@ export interface RosterData {
   sourceFileName: string;
 }
 
-// ── SOM Attendance ──
+// ── Multi-group Attendance (roster-based) ──
+
+/** true = present, false = absent, 'late' = late, null = no data */
+export type AttendanceValue = boolean | 'late' | null;
+
+/** Attendance data per group: group -> contactId -> date -> value */
+export type GroupAttendanceData = Record<string, Record<string, Record<string, AttendanceValue>>>;
+
+// ── SOM Attendance (legacy Excel import) ──
 
 export interface SOMMember {
   firstName: string;

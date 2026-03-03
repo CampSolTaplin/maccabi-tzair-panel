@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
-import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData } from '@/types';
+import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData, AttendanceValue, GroupAttendanceData } from '@/types';
 
 interface DataContextType {
   attendance: SOMAttendanceData | null;
@@ -37,6 +37,9 @@ interface DataContextType {
   // Roster
   rosterData: RosterData | null;
   importRoster: (data: RosterData) => void;
+  // Group attendance (roster-based, all groups)
+  groupAttendance: GroupAttendanceData;
+  updateGroupAttendance: (group: string, contactId: string, date: string, value: AttendanceValue) => void;
   loading: boolean;
 }
 
@@ -60,6 +63,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [addedMembers, setAddedMembers] = useState<AddedMember[]>([]);
   const [enabledDates, setEnabledDates] = useState<string[]>([]);
   const [rosterData, setRosterData] = useState<RosterData | null>(null);
+  const [groupAttendance, setGroupAttendance] = useState<GroupAttendanceData>({});
   const [loading, setLoading] = useState(true);
 
   // Track latest values for save callbacks that need current state
@@ -87,6 +91,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (Array.isArray(data.addedMembers)) setAddedMembers(data.addedMembers);
         if (Array.isArray(data.enabledDates)) setEnabledDates(data.enabledDates);
         if (data.rosterData) setRosterData(data.rosterData as RosterData);
+        if (data.groupAttendance && typeof data.groupAttendance === 'object') {
+          setGroupAttendance(data.groupAttendance as GroupAttendanceData);
+        }
       })
       .catch(err => console.error('Failed to load data', err))
       .finally(() => setLoading(false));
@@ -235,6 +242,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     saveToServer('rosterData', data);
   }, []);
 
+  // ── Group Attendance ──
+
+  const updateGroupAttendance = useCallback((group: string, contactId: string, date: string, value: AttendanceValue) => {
+    setGroupAttendance(prev => {
+      const next = {
+        ...prev,
+        [group]: {
+          ...prev[group],
+          [contactId]: {
+            ...(prev[group]?.[contactId] || {}),
+            [date]: value,
+          },
+        },
+      };
+      saveToServer('groupAttendance', next);
+      return next;
+    });
+  }, []);
+
   // ── Computed member lists ──
 
   const allMembers = useMemo(() => {
@@ -266,6 +292,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       dropMember, reactivateMember, addNewMember, removeAddedMember,
       enabledDates, toggleEnabledDate,
       rosterData, importRoster,
+      groupAttendance, updateGroupAttendance,
       loading,
     }}>
       {children}

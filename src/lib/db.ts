@@ -33,6 +33,9 @@ async function init() {
   await pool.query(`
     ALTER TABLE app_state ADD COLUMN IF NOT EXISTS roster_data JSONB
   `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE app_state ADD COLUMN IF NOT EXISTS group_attendance JSONB NOT NULL DEFAULT '{}'
+  `).catch(() => {});
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS mtz_users (
@@ -66,18 +69,28 @@ async function init() {
     console.error('❌ Failed to seed admin user:', seedErr);
   }
 
-  // Ensure SOM madrich user exists
+  // Seed madrich users for ALL groups
+  const madrichGroups = [
+    { username: 'katan@marjcc.org', display: 'Madrichim Katan', group: 'Katan' },
+    { username: 'noar@marjcc.org', display: 'Madrichim Noar', group: 'Noar' },
+    { username: 'presom@marjcc.org', display: 'Madrichim Pre-SOM', group: 'Pre-SOM' },
+    { username: 'som@marjcc.org', display: 'Madrichim SOM', group: 'SOM' },
+    { username: 'trips@marjcc.org', display: 'Madrichim Trips', group: 'Trips' },
+    { username: 'machanot@marjcc.org', display: 'Madrichim Machanot', group: 'Machanot' },
+  ];
   try {
     const hash = await bcrypt.hash('M@rjcc2026', 10);
-    await pool.query(
-      `INSERT INTO mtz_users (username, password_hash, display_name, role, permissions, group_name)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (username) DO UPDATE SET password_hash = $2, group_name = $6`,
-      ['som@marjcc.org', hash, 'Madrichim SOM', 'madrich', JSON.stringify({ group: 'SOM' }), 'SOM']
-    );
-    console.log('✅ SOM madrich user ready');
+    for (const mg of madrichGroups) {
+      await pool.query(
+        `INSERT INTO mtz_users (username, password_hash, display_name, role, permissions, group_name)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (username) DO UPDATE SET password_hash = $2, group_name = $6`,
+        [mg.username, hash, mg.display, 'madrich', JSON.stringify({ group: mg.group }), mg.group]
+      );
+    }
+    console.log('✅ All madrich users ready');
   } catch (seedErr) {
-    console.error('❌ Failed to seed SOM madrich user:', seedErr);
+    console.error('❌ Failed to seed madrich users:', seedErr);
   }
 
   initialized = true;
@@ -98,6 +111,7 @@ export async function loadAll() {
       addedMembers: [],
       enabledDates: [],
       rosterData: null,
+      groupAttendance: {},
     };
   }
   const row = rows[0];
@@ -108,6 +122,7 @@ export async function loadAll() {
     addedMembers: row.added_members,
     enabledDates: row.enabled_dates || [],
     rosterData: row.roster_data || null,
+    groupAttendance: row.group_attendance || {},
   };
 }
 
@@ -118,6 +133,7 @@ const COLUMN_MAP: Record<string, string> = {
   addedMembers: 'added_members',
   enabledDates: 'enabled_dates',
   rosterData: 'roster_data',
+  groupAttendance: 'group_attendance',
 };
 
 export async function saveKey(key: string, value: unknown) {
@@ -175,28 +191,40 @@ export async function deleteUser(id: number) {
   return rowCount != null && rowCount > 0;
 }
 
+/** Map of madrich usernames to their group config */
+const MADRICH_ACCOUNTS: Record<string, { display: string; group: string }> = {
+  'katan@marjcc.org': { display: 'Madrichim Katan', group: 'Katan' },
+  'noar@marjcc.org': { display: 'Madrichim Noar', group: 'Noar' },
+  'presom@marjcc.org': { display: 'Madrichim Pre-SOM', group: 'Pre-SOM' },
+  'som@marjcc.org': { display: 'Madrichim SOM', group: 'SOM' },
+  'trips@marjcc.org': { display: 'Madrichim Trips', group: 'Trips' },
+  'machanot@marjcc.org': { display: 'Madrichim Machanot', group: 'Machanot' },
+};
+
 /**
- * Ensure the SOM madrich user exists. Called on-demand if user not found during login.
- * This handles the case where the server was already running when the seed code was added.
+ * Ensure a madrich user exists. Called on-demand if user not found during login.
+ * Handles all known madrich accounts (katan, noar, presom, som, trips, machanot).
  */
-export async function ensureMadrichUser() {
+export async function ensureMadrichUser(username: string) {
+  const config = MADRICH_ACCOUNTS[username];
+  if (!config) return false;
+
   try {
-    // Ensure group_name column exists
     await pool.query('ALTER TABLE mtz_users ADD COLUMN IF NOT EXISTS group_name TEXT').catch(() => {});
-    // Ensure enabled_dates column exists
     await pool.query("ALTER TABLE app_state ADD COLUMN IF NOT EXISTS enabled_dates JSONB NOT NULL DEFAULT '[]'").catch(() => {});
+    await pool.query("ALTER TABLE app_state ADD COLUMN IF NOT EXISTS group_attendance JSONB NOT NULL DEFAULT '{}'").catch(() => {});
 
     const hash = await bcrypt.hash('M@rjcc2026', 10);
     await pool.query(
       `INSERT INTO mtz_users (username, password_hash, display_name, role, permissions, group_name)
        VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (username) DO UPDATE SET password_hash = $2, role = $4, permissions = $5, group_name = $6`,
-      ['som@marjcc.org', hash, 'Madrichim SOM', 'madrich', JSON.stringify({ group: 'SOM' }), 'SOM']
+      [username, hash, config.display, 'madrich', JSON.stringify({ group: config.group }), config.group]
     );
-    console.log('✅ SOM madrich user ensured');
+    console.log(`✅ Madrich user ${username} ensured`);
     return true;
   } catch (err) {
-    console.error('❌ Failed to ensure madrich user:', err);
+    console.error(`❌ Failed to ensure madrich user ${username}:`, err);
     return false;
   }
 }
