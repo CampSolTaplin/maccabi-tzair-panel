@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
@@ -46,13 +45,11 @@ export default function LoginPage() {
         {/* Logo & Brand */}
         <div className="text-center mb-8">
           <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-white/95 p-3 flex items-center justify-center shadow-lg">
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/maccabi-logo.png"
               alt="Maccabi Tzair Miami"
-              width={80}
-              height={80}
               className="w-full h-full object-contain"
-              priority
             />
           </div>
           <h1 className="font-serif text-2xl font-bold text-[#C5E3F6] mb-1">

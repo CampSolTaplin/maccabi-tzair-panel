@@ -26,7 +26,7 @@ async function init() {
   `);
 
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS mtz_users (
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
@@ -42,7 +42,7 @@ async function init() {
   try {
     const hash = await bcrypt.hash('M@rjcc2026', 10);
     await pool.query(
-      `INSERT INTO users (username, password_hash, display_name, role, permissions)
+      `INSERT INTO mtz_users (username, password_hash, display_name, role, permissions)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (username) DO UPDATE SET password_hash = $2`,
       ['maccabiadmin', hash, 'Administrador', 'admin', JSON.stringify({ all: true })]
@@ -103,14 +103,14 @@ export async function saveKey(key: string, value: unknown) {
 
 export async function findUserByUsername(username: string) {
   await init();
-  const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+  const { rows } = await pool.query('SELECT * FROM mtz_users WHERE username = $1', [username]);
   return rows[0] || null;
 }
 
 export async function findUserById(id: number) {
   await init();
   const { rows } = await pool.query(
-    'SELECT id, username, display_name, role, permissions, created_at, updated_at FROM users WHERE id = $1',
+    'SELECT id, username, display_name, role, permissions, created_at, updated_at FROM mtz_users WHERE id = $1',
     [id]
   );
   return rows[0] || null;
@@ -119,7 +119,7 @@ export async function findUserById(id: number) {
 export async function listUsers() {
   await init();
   const { rows } = await pool.query(
-    'SELECT id, username, display_name, role, permissions, created_at, updated_at FROM users ORDER BY created_at ASC'
+    'SELECT id, username, display_name, role, permissions, created_at, updated_at FROM mtz_users ORDER BY created_at ASC'
   );
   return rows;
 }
@@ -127,7 +127,7 @@ export async function listUsers() {
 export async function createUser(username: string, passwordHash: string, displayName: string, role: string) {
   await init();
   const { rows } = await pool.query(
-    `INSERT INTO users (username, password_hash, display_name, role)
+    `INSERT INTO mtz_users (username, password_hash, display_name, role)
      VALUES ($1, $2, $3, $4)
      RETURNING id, username, display_name, role, created_at`,
     [username, passwordHash, displayName, role]
@@ -137,6 +137,6 @@ export async function createUser(username: string, passwordHash: string, display
 
 export async function deleteUser(id: number) {
   await init();
-  const { rowCount } = await pool.query('DELETE FROM users WHERE id = $1', [id]);
+  const { rowCount } = await pool.query('DELETE FROM mtz_users WHERE id = $1', [id]);
   return rowCount != null && rowCount > 0;
 }

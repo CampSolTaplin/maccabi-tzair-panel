@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -44,11 +43,10 @@ export default function Sidebar() {
       {/* Brand */}
       <div className="flex items-center gap-3.5 border-b border-white/[0.08] px-5 py-5 min-h-[80px]">
         <div className="w-10 h-10 flex-shrink-0 rounded-full bg-white/90 p-1 flex items-center justify-center">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/maccabi-logo.png"
             alt="Maccabi Tzair Miami"
-            width={40}
-            height={40}
             className="w-full h-full object-contain"
           />
         </div>
