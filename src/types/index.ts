@@ -35,8 +35,8 @@ export interface SOMMember {
   contactId: string;
 }
 
-/** true = present, false = absent, null = no data */
-export type SOMAttendanceValue = boolean | null;
+/** true = present, false = absent, 'late' = late (half hours), null = no data */
+export type SOMAttendanceValue = boolean | 'late' | null;
 
 export interface SOMAttendanceData {
   members: SOMMember[];

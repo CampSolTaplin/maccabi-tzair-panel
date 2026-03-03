@@ -30,7 +30,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/');
+      // Redirect madrich users to take-attendance, admins to dashboard
+      const redirectTo = data.user?.role === 'madrich' ? '/take-attendance' : '/';
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError('Error de conexión');

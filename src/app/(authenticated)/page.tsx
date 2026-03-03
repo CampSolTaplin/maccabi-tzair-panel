@@ -14,52 +14,56 @@ export default function DashboardPage() {
     const totalMembers = activeMembers.length;
     const totalSessions = attendance.dates.length;
 
-    let totalPresent = 0, totalAbsent = 0;
+    let totalPresent = 0, totalLate = 0, totalAbsent = 0;
     for (const m of activeMembers) {
       const rec = attendance.records[m.contactId] || {};
       for (const d of attendance.dates) {
         if (rec[d] === true) totalPresent++;
+        else if (rec[d] === 'late') totalLate++;
         else if (rec[d] === false) totalAbsent++;
       }
     }
-    const totalMarked = totalPresent + totalAbsent;
-    const overallRate = totalMarked > 0 ? Math.round((totalPresent / totalMarked) * 100) : 0;
+    const totalMarked = totalPresent + totalLate + totalAbsent;
+    const overallRate = totalMarked > 0 ? Math.round(((totalPresent + totalLate) / totalMarked) * 100) : 0;
 
     // Last session
     const lastDate = attendance.dates[attendance.dates.length - 1];
-    let lastPresent = 0, lastAbsent = 0;
+    let lastPresent = 0, lastLate = 0, lastAbsent = 0;
     for (const m of activeMembers) {
       const v = (attendance.records[m.contactId] || {})[lastDate];
       if (v === true) lastPresent++;
+      else if (v === 'late') lastLate++;
       else if (v === false) lastAbsent++;
     }
-    const lastTotal = lastPresent + lastAbsent;
-    const lastRate = lastTotal > 0 ? Math.round((lastPresent / lastTotal) * 100) : 0;
+    const lastTotal = lastPresent + lastLate + lastAbsent;
+    const lastRate = lastTotal > 0 ? Math.round(((lastPresent + lastLate) / lastTotal) * 100) : 0;
 
     // Monthly
     const monthlyRates = attendance.months.map(month => {
-      let p = 0, a = 0;
+      let p = 0, l = 0, a = 0;
       for (const m of activeMembers) {
         const rec = attendance.records[m.contactId] || {};
         for (const d of month.dates) {
           if (rec[d] === true) p++;
+          else if (rec[d] === 'late') l++;
           else if (rec[d] === false) a++;
         }
       }
-      const total = p + a;
-      return { name: month.name, sessions: month.dates.length, rate: total > 0 ? Math.round((p / total) * 100) : 0 };
+      const total = p + l + a;
+      return { name: month.name, sessions: month.dates.length, rate: total > 0 ? Math.round(((p + l) / total) * 100) : 0 };
     });
 
     // Member rankings
     const memberRates = activeMembers.map(m => {
       const rec = attendance.records[m.contactId] || {};
-      let p = 0, a = 0;
+      let p = 0, l = 0, a = 0;
       for (const d of attendance.dates) {
         if (rec[d] === true) p++;
+        else if (rec[d] === 'late') l++;
         else if (rec[d] === false) a++;
       }
-      const total = p + a;
-      return { ...m, present: p, absent: a, total, rate: total > 0 ? Math.round((p / total) * 100) : 0 };
+      const total = p + l + a;
+      return { ...m, present: p + l, absent: a, total, rate: total > 0 ? Math.round(((p + l) / total) * 100) : 0 };
     }).filter(m => m.total > 0);
     memberRates.sort((a, b) => b.rate - a.rate);
 

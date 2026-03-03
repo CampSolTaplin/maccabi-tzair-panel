@@ -14,6 +14,7 @@ export interface JWTPayload {
   username: string;
   displayName: string;
   role: string;
+  group?: string;     // group name for madrich users (e.g. 'SOM')
 }
 
 export async function createToken(payload: JWTPayload): Promise<string> {

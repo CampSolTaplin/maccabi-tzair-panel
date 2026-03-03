@@ -13,6 +13,7 @@ export async function GET() {
       username: session.username,
       displayName: session.displayName,
       role: session.role,
+      group: session.group || null,
     },
   });
 }

@@ -29,14 +29,15 @@ export default function RosterPage() {
     const stats = new Map<string, { present: number; absent: number; rate: number }>();
     for (const m of baseList) {
       const rec = attendance.records[m.contactId] || {};
-      let present = 0, absent = 0;
+      let present = 0, late = 0, absent = 0;
       for (const d of attendance.dates) {
         const v = rec[d];
         if (v === true) present++;
+        else if (v === 'late') late++;
         else if (v === false) absent++;
       }
-      const total = present + absent;
-      stats.set(m.contactId, { present, absent, rate: total > 0 ? Math.round((present / total) * 100) : 0 });
+      const total = present + late + absent;
+      stats.set(m.contactId, { present: present + late, absent, rate: total > 0 ? Math.round(((present + late) / total) * 100) : 0 });
     }
     return stats;
   }, [attendance, baseList]);

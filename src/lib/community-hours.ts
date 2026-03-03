@@ -5,10 +5,12 @@ export interface MemberHours {
   fullName: string;
   firstName: string;
   lastName: string;
-  /** Hours from regular Wed+Sat sessions (2h per full attendance) */
+  /** Hours from regular Wed+Sat sessions (2h per full attendance, 1h per late) */
   regularHours: number;
-  /** Number of regular sessions attended */
+  /** Number of regular sessions attended (full) */
   regularSessions: number;
+  /** Number of regular sessions attended late */
+  lateSessions: number;
   /** Hours from special community events */
   eventHours: number;
   /** Breakdown of event hours */
@@ -32,11 +34,13 @@ export function computeAllMemberHours(
   return attendance.members.map(member => {
     // Regular session hours
     let regularSessions = 0;
+    let lateSessions = 0;
     const rec = attendance.records[member.contactId] || {};
     for (const d of attendance.dates) {
       if (rec[d] === true) regularSessions++;
+      else if (rec[d] === 'late') lateSessions++;
     }
-    const regularHours = regularSessions * 2; // 2 community hours per full session
+    const regularHours = (regularSessions * 2) + (lateSessions * 1); // 2h per full, 1h per late
 
     // Event hours
     let eventHours = 0;
@@ -56,6 +60,7 @@ export function computeAllMemberHours(
       lastName: member.lastName,
       regularHours,
       regularSessions,
+      lateSessions,
       eventHours,
       eventBreakdown,
       totalHours: regularHours + eventHours,

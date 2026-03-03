@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 
 const COOKIE_NAME = 'mtz-session';
 const PUBLIC_PATHS = ['/login', '/api/auth/login'];
+const MADRICH_ALLOWED = ['/take-attendance', '/api/data', '/api/auth/me', '/api/auth/logout'];
 
 function getSecret() {
   const secret = process.env.JWT_SECRET;
@@ -30,7 +31,22 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, getSecret());
+    const { payload } = await jwtVerify(token, getSecret());
+    const role = payload.role as string;
+
+    // Madrich role: restrict to allowed paths only
+    if (role === 'madrich') {
+      // Redirect root to take-attendance
+      if (pathname === '/') {
+        return NextResponse.redirect(new URL('/take-attendance', request.url));
+      }
+      // Only allow specific paths
+      const isAllowed = MADRICH_ALLOWED.some(p => pathname.startsWith(p));
+      if (!isAllowed) {
+        return NextResponse.redirect(new URL('/take-attendance', request.url));
+      }
+    }
+
     return NextResponse.next();
   } catch {
     const response = NextResponse.redirect(new URL('/login', request.url));

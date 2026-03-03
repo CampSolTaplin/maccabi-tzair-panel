@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { findUserByUsername } from '@/lib/db';
+import { findUserByUsername, ensureMadrichUser } from '@/lib/db';
 import { createToken, setSessionCookie } from '@/lib/auth';
 
 export async function POST(req: Request) {
@@ -14,7 +14,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await findUserByUsername(username);
+    let user = await findUserByUsername(username);
+
+    // If user not found and it's the SOM madrich email, try to seed it
+    if (!user && username === 'som@marjcc.org') {
+      await ensureMadrichUser();
+      user = await findUserByUsername(username);
+    }
+
     if (!user) {
       return NextResponse.json(
         { error: 'Credenciales inválidas' },
@@ -35,6 +42,7 @@ export async function POST(req: Request) {
       username: user.username,
       displayName: user.display_name,
       role: user.role,
+      group: user.group_name || undefined,
     });
 
     await setSessionCookie(token);

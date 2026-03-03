@@ -31,6 +31,9 @@ interface DataContextType {
   reactivateMember: (contactId: string) => void;
   addNewMember: (firstName: string, lastName: string, joinDate: string) => void;
   removeAddedMember: (contactId: string) => void;
+  // Enabled dates for attendance-taking
+  enabledDates: string[];
+  toggleEnabledDate: (date: string) => void;
   loading: boolean;
 }
 
@@ -52,6 +55,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<CommunityEvent[]>([]);
   const [memberOverrides, setMemberOverrides] = useState<Record<string, MemberOverride>>({});
   const [addedMembers, setAddedMembers] = useState<AddedMember[]>([]);
+  const [enabledDates, setEnabledDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Track latest values for save callbacks that need current state
@@ -77,6 +81,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           setMemberOverrides(data.memberOverrides);
         }
         if (Array.isArray(data.addedMembers)) setAddedMembers(data.addedMembers);
+        if (Array.isArray(data.enabledDates)) setEnabledDates(data.enabledDates);
       })
       .catch(err => console.error('Failed to load data', err))
       .finally(() => setLoading(false));
@@ -208,6 +213,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // ── Enabled dates ──
+
+  const toggleEnabledDate = useCallback((date: string) => {
+    setEnabledDates(prev => {
+      const next = prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date];
+      saveToServer('enabledDates', next);
+      return next;
+    });
+  }, []);
+
   // ── Computed member lists ──
 
   const allMembers = useMemo(() => {
@@ -237,6 +252,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       memberOverrides, addedMembers, allMembers, activeMembers, droppedMembers,
       getMemberStatus, getMemberOverride,
       dropMember, reactivateMember, addNewMember, removeAddedMember,
+      enabledDates, toggleEnabledDate,
       loading,
     }}>
       {children}

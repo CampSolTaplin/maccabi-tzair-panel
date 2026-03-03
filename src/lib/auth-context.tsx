@@ -8,6 +8,7 @@ interface User {
   username: string;
   displayName: string;
   role: string;
+  group?: string | null;
 }
 
 interface AuthContextType {

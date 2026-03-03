@@ -177,36 +177,39 @@ export default function AttendancePage() {
 
   // Per-member stats
   const memberStats = useMemo(() => {
-    if (!attendance) return new Map<string, { present: number; absent: number; total: number; rate: number }>();
-    const stats = new Map<string, { present: number; absent: number; total: number; rate: number }>();
+    if (!attendance) return new Map<string, { present: number; late: number; absent: number; total: number; rate: number }>();
+    const stats = new Map<string, { present: number; late: number; absent: number; total: number; rate: number }>();
     const activeDates = visibleSessionDates.filter(d => !noSessionDates.has(d));
     for (const m of filteredMembers) {
       const rec = attendance.records[m.contactId] || {};
-      let present = 0, absent = 0;
+      let present = 0, late = 0, absent = 0;
       for (const d of activeDates) {
         const v = rec[d];
         if (v === true) present++;
+        else if (v === 'late') late++;
         else if (v === false) absent++;
       }
-      const total = present + absent;
-      stats.set(m.contactId, { present, absent, total, rate: total > 0 ? Math.round((present / total) * 100) : 0 });
+      const total = present + late + absent;
+      const effectivePresent = present + (late * 0.5);
+      stats.set(m.contactId, { present, late, absent, total, rate: total > 0 ? Math.round((effectivePresent / total) * 100) : 0 });
     }
     return stats;
   }, [attendance, visibleSessionDates, noSessionDates, filteredMembers]);
 
   // Per-date stats
   const dateStats = useMemo(() => {
-    if (!attendance) return new Map<string, { present: number; absent: number; rate: number }>();
-    const stats = new Map<string, { present: number; absent: number; rate: number }>();
+    if (!attendance) return new Map<string, { present: number; late: number; absent: number; rate: number }>();
+    const stats = new Map<string, { present: number; late: number; absent: number; rate: number }>();
     for (const d of visibleSessionDates) {
-      let present = 0, absent = 0;
+      let present = 0, late = 0, absent = 0;
       for (const m of filteredMembers) {
         const v = (attendance.records[m.contactId] || {})[d];
         if (v === true) present++;
+        else if (v === 'late') late++;
         else if (v === false) absent++;
       }
-      const total = present + absent;
-      stats.set(d, { present, absent, rate: total > 0 ? Math.round((present / total) * 100) : 0 });
+      const total = present + late + absent;
+      stats.set(d, { present, late, absent, rate: total > 0 ? Math.round(((present + late) / total) * 100) : 0 });
     }
     return stats;
   }, [attendance, visibleSessionDates, filteredMembers]);
@@ -216,10 +219,11 @@ export default function AttendancePage() {
     return { day: d.getDate(), weekday: d.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3) };
   };
 
-  const handleCellClick = (contactId: string, date: string, currentVal: boolean | null | undefined) => {
-    let next: boolean | null;
+  const handleCellClick = (contactId: string, date: string, currentVal: boolean | 'late' | null | undefined) => {
+    let next: boolean | 'late' | null;
     if (currentVal === null || currentVal === undefined) next = true;
-    else if (currentVal === true) next = false;
+    else if (currentVal === true) next = 'late';
+    else if (currentVal === 'late') next = false;
     else next = null;
     updateAttendanceCell(contactId, date, next);
   };
@@ -305,6 +309,9 @@ export default function AttendancePage() {
             <span className="text-[0.6rem] text-[#999]">|</span>
             <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
               <span className="inline-block w-3.5 h-3.5 rounded bg-[#2D8B4E] text-white text-[0.5rem] font-bold leading-[14px] text-center">✓</span> Presente
+            </span>
+            <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
+              <span className="inline-block w-3.5 h-3.5 rounded bg-[#E89B3A] text-white text-[0.5rem] font-bold leading-[14px] text-center">L</span> Tarde
             </span>
             <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
               <span className="inline-block w-3.5 h-3.5 rounded bg-[#C0392B] text-white text-[0.5rem] font-bold leading-[14px] text-center">✗</span> Ausente
@@ -448,9 +455,11 @@ export default function AttendancePage() {
                           <td key={col.date} className={`px-0.5 py-2 text-center border-b border-[#f0eeea] ${isFirstOfMonth ? 'border-l border-[#D8E1EA]' : ''}`}>
                             <button onClick={() => handleCellClick(member.contactId, col.date, val)}
                               className="inline-flex items-center justify-center w-5 h-5 rounded text-[0.6rem] font-bold leading-5 transition-all hover:scale-110 hover:shadow-sm cursor-pointer"
-                              title={`Click: ${val === true ? '→ Ausente' : val === false ? '→ Sin dato' : '→ Presente'}`}>
+                              title={`Click: ${val === true ? '→ Tarde' : val === 'late' ? '→ Ausente' : val === false ? '→ Sin dato' : '→ Presente'}`}>
                               {val === true
                                 ? <span className="w-5 h-5 rounded bg-[#2D8B4E] text-white leading-5 text-center">✓</span>
+                                : val === 'late'
+                                ? <span className="w-5 h-5 rounded bg-[#E89B3A] text-white leading-5 text-center">L</span>
                                 : val === false
                                 ? <span className="w-5 h-5 rounded bg-[#C0392B] text-white leading-5 text-center">✗</span>
                                 : <span className="w-5 h-5 rounded bg-[#f0eeea] text-[#C5CDD8] leading-5 text-center">—</span>}
@@ -477,7 +486,7 @@ export default function AttendancePage() {
                     }
                     const s = dateStats.get(col.date);
                     return <td key={col.date} className="px-0.5 py-2 text-center">
-                      <span className="text-[0.65rem] text-[#2D8B4E] font-bold">{s?.present ?? 0}</span></td>;
+                      <span className="text-[0.65rem] text-[#2D8B4E] font-bold">{(s?.present ?? 0) + (s?.late ?? 0)}</span></td>;
                   })}
                 </tr>
                 <tr className="bg-[#F5F3EF] font-semibold">

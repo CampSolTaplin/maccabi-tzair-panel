@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   try {
-    const { username, password, displayName, role } = await req.json();
+    const { username, password, displayName, role, groupName } = await req.json();
 
     if (!username || !password || !displayName) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     }
 
     const hash = await bcrypt.hash(password, 10);
-    const user = await createUser(username, hash, displayName, role || 'admin');
+    const user = await createUser(username, hash, displayName, role || 'admin', groupName);
     return NextResponse.json({ user }, { status: 201 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : '';

@@ -10,6 +10,7 @@ interface UserRow {
   username: string;
   display_name: string;
   role: string;
+  group_name: string | null;
   created_at: string;
 }
 
@@ -116,9 +117,11 @@ export default function UsersPage() {
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         u.role === 'admin'
                           ? 'bg-[#1B2A6B]/10 text-[#1B2A6B]'
+                          : u.role === 'madrich'
+                          ? 'bg-[#2D8B4E]/10 text-[#2D8B4E]'
                           : 'bg-[#D8E1EA]/50 text-[#5A6472]'
                       }`}>
-                        {u.role}
+                        {u.role}{u.group_name ? ` · ${u.group_name}` : ''}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-[#5A6472] text-xs">
@@ -153,19 +156,32 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [role, setRole] = useState('admin');
+  const [groupName, setGroupName] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (role === 'madrich' && !groupName.trim()) {
+      setError('El grupo es requerido para usuarios Madrich');
+      return;
+    }
+
     setSaving(true);
 
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, displayName, role }),
+        body: JSON.stringify({
+          username,
+          password,
+          displayName,
+          role,
+          ...(role === 'madrich' ? { groupName: groupName.trim() } : {}),
+        }),
       });
       const data = await res.json();
 
@@ -242,22 +258,42 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
               Rol
             </label>
             <select
               value={role}
-              onChange={e => setRole(e.target.value)}
+              onChange={e => { setRole(e.target.value); if (e.target.value !== 'madrich') setGroupName(''); }}
               className="w-full px-4 py-2.5 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10 bg-white"
             >
               <option value="admin">Admin</option>
+              <option value="madrich">Madrich</option>
               <option value="editor">Editor</option>
               <option value="viewer">Viewer</option>
             </select>
           </div>
 
-          <div className="flex gap-3">
+          {role === 'madrich' && (
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
+                Grupo
+              </label>
+              <input
+                type="text"
+                value={groupName}
+                onChange={e => setGroupName(e.target.value)}
+                placeholder="SOM"
+                className="w-full px-4 py-2.5 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
+                required
+              />
+              <p className="mt-1 text-xs text-[#5A6472]">
+                Nombre del grupo que este madrich podrá gestionar (ej: SOM)
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-3 mt-6">
             <button
               type="button"
               onClick={onClose}
