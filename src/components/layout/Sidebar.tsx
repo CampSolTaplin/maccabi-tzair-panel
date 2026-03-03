@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -43,11 +44,13 @@ export default function Sidebar() {
       {/* Brand */}
       <div className="flex items-center gap-3.5 border-b border-white/[0.08] px-5 py-5 min-h-[80px]">
         <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
-          <svg viewBox="0 0 100 100" className="w-10 h-10">
-            <polygon points="50,8 61,30 83,30 65,46 73,70 50,55 27,70 35,46 17,30 39,30" fill="#C5E3F6" />
-            <polygon points="50,92 39,70 17,70 35,54 27,30 50,45 73,30 65,54 83,70 61,70" fill="#C5E3F6" />
-            <text x="50" y="58" textAnchor="middle" fill="#1B2A6B" fontSize="22" fontWeight="bold" fontFamily="serif">מצ</text>
-          </svg>
+          <Image
+            src="/maccabi-logo.png"
+            alt="Maccabi Tzair Miami"
+            width={40}
+            height={40}
+            className="w-10 h-10 object-contain brightness-0 invert"
+          />
         </div>
         <div
           className={cn(

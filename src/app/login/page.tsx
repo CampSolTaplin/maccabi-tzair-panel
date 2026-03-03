@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
@@ -44,12 +45,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo & Brand */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4">
-            <svg viewBox="0 0 100 100" className="w-16 h-16">
-              <polygon points="50,8 61,30 83,30 65,46 73,70 50,55 27,70 35,46 17,30 39,30" fill="#C5E3F6" />
-              <polygon points="50,92 39,70 17,70 35,54 27,30 50,45 73,30 65,54 83,70 61,70" fill="#C5E3F6" />
-              <text x="50" y="58" textAnchor="middle" fill="#1B2A6B" fontSize="22" fontWeight="bold" fontFamily="serif">מצ</text>
-            </svg>
+          <div className="w-20 h-20 mx-auto mb-4">
+            <Image
+              src="/maccabi-logo.png"
+              alt="Maccabi Tzair Miami"
+              width={80}
+              height={80}
+              className="w-20 h-20 object-contain brightness-0 invert"
+              priority
+            />
           </div>
           <h1 className="font-serif text-2xl font-bold text-[#C5E3F6] mb-1">
             School of Madrichim
