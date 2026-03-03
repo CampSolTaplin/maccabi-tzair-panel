@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import { Database, Bell, Palette, Upload, Edit, CheckCircle2, Trash2, CalendarDays, Plus, X } from 'lucide-react';
+import { Database, Bell, Palette, Upload, Edit, CheckCircle2, Trash2, CalendarDays, Plus, X, Star, Zap } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 
 function Toggle({ defaultOn = false }: { defaultOn?: boolean }) {
@@ -18,10 +18,17 @@ function Toggle({ defaultOn = false }: { defaultOn?: boolean }) {
 }
 
 export default function SettingsPage() {
-  const { setShowImportModal, isImported, attendance, clearImport, enabledDates, toggleEnabledDate } = useData();
+  const { setShowImportModal, isImported, attendance, clearImport, enabledDates, toggleEnabledDate, events } = useData();
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
 
   const sortedEnabledDates = [...enabledDates].sort((a, b) => b.localeCompare(a));
+
+  // Map event dates to event names for display
+  const eventByDate = new Map(events.map(e => [e.date, e.name]));
+
+  // Events that are NOT yet enabled for attendance
+  const unenbledEvents = events.filter(e => !enabledDates.includes(e.date))
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   const formatDate = (iso: string) => {
     const d = new Date(iso + 'T12:00:00');
@@ -30,6 +37,11 @@ export default function SettingsPage() {
     const month = d.toLocaleDateString('es-ES', { month: 'long' });
     const year = d.getFullYear();
     return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${day} de ${month} ${year}`;
+  };
+
+  const formatDateShort = (iso: string) => {
+    const d = new Date(iso + 'T12:00:00');
+    return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const handleAddDate = () => {
@@ -52,7 +64,33 @@ export default function SettingsPage() {
             Solo las fechas activas aparecerán en la app de los Madrichim.
           </p>
 
-          {/* Add date */}
+          {/* Quick enable from events */}
+          {unenbledEvents.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-2">
+                Eventos sin asistencia habilitada
+              </label>
+              <div className="space-y-1.5">
+                {unenbledEvents.map(ev => (
+                  <div key={ev.id} className="flex items-center justify-between px-3 py-2 rounded-lg border border-dashed border-[#E89B3A]/40 bg-[#E89B3A]/[0.04]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Star className="w-3.5 h-3.5 text-[#E89B3A] flex-shrink-0" />
+                      <span className="text-sm font-medium text-[#1A1A2E] truncate">{ev.name}</span>
+                      <span className="text-xs text-[#5A6472] flex-shrink-0">{formatDateShort(ev.date)}</span>
+                    </div>
+                    <button
+                      onClick={() => toggleEnabledDate(ev.date)}
+                      className="flex items-center gap-1 px-3 py-1 rounded-lg bg-[#E89B3A] text-white text-xs font-medium hover:bg-[#D08A2F] transition-all flex-shrink-0 ml-2"
+                    >
+                      <Zap className="w-3 h-3" /> Habilitar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add date manually */}
           <div className="flex items-center gap-2 mb-4">
             <input
               type="date"
@@ -65,7 +103,7 @@ export default function SettingsPage() {
               disabled={!newDate || enabledDates.includes(newDate)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Plus className="w-4 h-4" /> Habilitar
+              <Plus className="w-4 h-4" /> Habilitar fecha
             </button>
           </div>
 
@@ -76,21 +114,35 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {sortedEnabledDates.map(date => (
-                <div key={date} className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-[#D8E1EA] bg-[#f8f7f5]">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="w-4 h-4 text-[#2D8B4E]" />
-                    <span className="text-sm font-medium text-[#1A1A2E]">{formatDate(date)}</span>
+              {sortedEnabledDates.map(date => {
+                const eventName = eventByDate.get(date);
+                return (
+                  <div key={date} className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-[#D8E1EA] bg-[#f8f7f5]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {eventName ? (
+                        <Star className="w-4 h-4 text-[#E89B3A] flex-shrink-0" />
+                      ) : (
+                        <CalendarDays className="w-4 h-4 text-[#2D8B4E] flex-shrink-0" />
+                      )}
+                      <span className="text-sm font-medium text-[#1A1A2E] truncate">
+                        {formatDate(date)}
+                      </span>
+                      {eventName && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-medium bg-[#E89B3A]/10 text-[#E89B3A] flex-shrink-0">
+                          {eventName}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => toggleEnabledDate(date)}
+                      className="p-1.5 rounded-lg text-[#C0392B] hover:bg-red-50 transition-all flex-shrink-0"
+                      title="Deshabilitar fecha"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => toggleEnabledDate(date)}
-                    className="p-1.5 rounded-lg text-[#C0392B] hover:bg-red-50 transition-all"
-                    title="Deshabilitar fecha"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -5,14 +5,14 @@ import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
 import { SOMAttendanceValue } from '@/types';
 import {
-  LogOut, Search, Check, Clock, X, ChevronDown, UserCircle, CalendarDays, Users,
+  LogOut, Search, Check, Clock, X, ChevronDown, UserCircle, CalendarDays, Users, Star,
 } from 'lucide-react';
 
 export default function TakeAttendancePage() {
   const { user, logout } = useAuth();
   const {
     attendance, isImported, updateAttendanceCell,
-    activeMembers, enabledDates, loading,
+    activeMembers, enabledDates, events, loading,
   } = useData();
 
   const [search, setSearch] = useState('');
@@ -27,6 +27,11 @@ export default function TakeAttendancePage() {
   const effectiveDate = selectedDate && enabledDates.includes(selectedDate)
     ? selectedDate
     : sortedEnabledDates[0] || null;
+
+  // Map event dates to event names
+  const eventByDate = useMemo(() => {
+    return new Map(events.map(e => [e.date, e.name]));
+  }, [events]);
 
   // Filter and sort members
   const filteredMembers = useMemo(() => {
@@ -152,19 +157,37 @@ export default function TakeAttendancePage() {
                     onChange={(e) => setSelectedDate(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-[#D8E1EA] text-sm font-medium bg-white appearance-none focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
                   >
-                    {sortedEnabledDates.map(d => (
-                      <option key={d} value={d}>{formatDateDisplay(d)}</option>
-                    ))}
+                    {sortedEnabledDates.map(d => {
+                      const evName = eventByDate.get(d);
+                      return (
+                        <option key={d} value={d}>
+                          {formatDateDisplay(d)}{evName ? ` — ${evName}` : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6472] pointer-events-none" />
                 </div>
               </div>
             ) : (
-              <div className="bg-[#1B2A6B]/5 rounded-xl px-4 py-3 mb-4 flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-[#1B2A6B]" />
-                <span className="text-sm font-medium text-[#1B2A6B]">
-                  {formatDateDisplay(effectiveDate)}
-                </span>
+              <div className="bg-[#1B2A6B]/5 rounded-xl px-4 py-3 mb-4">
+                <div className="flex items-center gap-2">
+                  {eventByDate.has(effectiveDate) ? (
+                    <Star className="w-4 h-4 text-[#E89B3A]" />
+                  ) : (
+                    <CalendarDays className="w-4 h-4 text-[#1B2A6B]" />
+                  )}
+                  <span className="text-sm font-medium text-[#1B2A6B]">
+                    {formatDateDisplay(effectiveDate)}
+                  </span>
+                </div>
+                {eventByDate.has(effectiveDate) && (
+                  <div className="mt-1 ml-6">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-semibold bg-[#E89B3A]/15 text-[#E89B3A]">
+                      {eventByDate.get(effectiveDate)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
