@@ -48,6 +48,8 @@ interface DataContextType {
   // No-session dates (dates to display as grayed out, no attendance expected)
   noSessionDates: string[];
   toggleNoSessionDate: (date: string) => void;
+  /** Fetch latest attendance data from server (for real-time sync between sessions) */
+  refreshAttendanceFromServer: () => void;
   loading: boolean;
 }
 
@@ -81,6 +83,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   memberOverridesRef.current = memberOverrides;
   const addedMembersRef = useRef(addedMembers);
   addedMembersRef.current = addedMembers;
+
+  // Track in-flight attendance saves to avoid poll overwriting optimistic updates
+  const inflightSaves = useRef(0);
 
   // Load from server on mount
   useEffect(() => {
@@ -128,18 +133,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateAttendanceCell = useCallback((contactId: string, date: string, value: SOMAttendanceValue) => {
+    // Optimistic local update
     setAttendance(prev => {
       if (!prev) return prev;
-      const next = {
+      return {
         ...prev,
         records: {
           ...prev.records,
           [contactId]: { ...prev.records[contactId], [date]: value },
         },
       };
-      saveToServer('attendanceData', next);
-      return next;
     });
+    // Atomic server-side merge (prevents race conditions with concurrent writers)
+    inflightSaves.current++;
+    fetch('/api/data/attendance-sync', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'som', contactId, date, value }),
+    })
+      .catch(err => console.error('Failed to save SOM attendance cell', err))
+      .finally(() => { inflightSaves.current--; });
   }, []);
 
   // ── Events CRUD ──
@@ -300,20 +313,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // ── Group Attendance ──
 
   const updateGroupAttendance = useCallback((group: string, contactId: string, date: string, value: AttendanceValue) => {
-    setGroupAttendance(prev => {
-      const next = {
-        ...prev,
-        [group]: {
-          ...prev[group],
-          [contactId]: {
-            ...(prev[group]?.[contactId] || {}),
-            [date]: value,
-          },
+    // Optimistic local update
+    setGroupAttendance(prev => ({
+      ...prev,
+      [group]: {
+        ...prev[group],
+        [contactId]: {
+          ...(prev[group]?.[contactId] || {}),
+          [date]: value,
         },
-      };
-      saveToServer('groupAttendance', next);
-      return next;
-    });
+      },
+    }));
+    // Atomic server-side merge (prevents race conditions with concurrent writers)
+    inflightSaves.current++;
+    fetch('/api/data/attendance-sync', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'group', group, contactId, date, value }),
+    })
+      .catch(err => console.error('Failed to save group attendance cell', err))
+      .finally(() => { inflightSaves.current--; });
   }, []);
 
   // ── No-session dates ──
@@ -324,6 +343,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
       saveToServer('noSessionDates', next);
       return next;
     });
+  }, []);
+
+  // ── Real-time sync: fetch latest attendance from server ──
+
+  const refreshAttendanceFromServer = useCallback(() => {
+    // Skip if there are in-flight saves (don't overwrite optimistic updates)
+    if (inflightSaves.current > 0) return;
+
+    fetch('/api/data/attendance-sync')
+      .then(res => res.json())
+      .then(data => {
+        // Re-check after async fetch: don't overwrite if a save started during the fetch
+        if (inflightSaves.current > 0) return;
+
+        if (data.groupAttendance) {
+          setGroupAttendance(data.groupAttendance);
+        }
+        if (data.attendanceRecords) {
+          setAttendance(prev => {
+            if (!prev) return prev;
+            return { ...prev, records: data.attendanceRecords };
+          });
+        }
+      })
+      .catch(err => console.error('Failed to sync attendance', err));
   }, []);
 
   // ── Computed member lists ──
@@ -359,6 +403,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       rosterData, importRoster,
       groupAttendance, updateGroupAttendance,
       noSessionDates, toggleNoSessionDate,
+      refreshAttendanceFromServer,
       loading,
     }}>
       {children}

@@ -172,6 +172,63 @@ export async function saveKey(key: string, value: unknown) {
   );
 }
 
+// ── Atomic attendance cell merge (prevents race conditions with concurrent writers) ──
+
+export async function mergeGroupAttendanceCell(group: string, contactId: string, date: string, value: unknown) {
+  await init();
+  await pool.query(
+    `INSERT INTO app_state (id, group_attendance, updated_at)
+     VALUES ('singleton',
+       jsonb_build_object($1::text, jsonb_build_object($2::text, jsonb_build_object($3::text, $4::jsonb))),
+       NOW()
+     )
+     ON CONFLICT (id) DO UPDATE SET
+       group_attendance =
+         COALESCE(app_state.group_attendance, '{}') ||
+         jsonb_build_object($1::text,
+           COALESCE(app_state.group_attendance->$1, '{}') ||
+           jsonb_build_object($2::text,
+             COALESCE(app_state.group_attendance->$1->$2, '{}') ||
+             jsonb_build_object($3::text, $4::jsonb)
+           )
+         ),
+       updated_at = NOW()`,
+    [group, contactId, date, JSON.stringify(value)]
+  );
+}
+
+export async function mergeSOMAttendanceCell(contactId: string, date: string, value: unknown) {
+  await init();
+  await pool.query(
+    `UPDATE app_state SET
+       attendance_data = jsonb_set(
+         COALESCE(attendance_data, '{"members":[],"records":{},"dates":[],"months":[]}'),
+         '{records}',
+         COALESCE(attendance_data->'records', '{}') ||
+         jsonb_build_object($1::text,
+           COALESCE(attendance_data->'records'->$1, '{}') ||
+           jsonb_build_object($2::text, $3::jsonb)
+         )
+       ),
+       updated_at = NOW()
+     WHERE id = 'singleton'`,
+    [contactId, date, JSON.stringify(value)]
+  );
+}
+
+export async function loadAttendanceOnly() {
+  await init();
+  const { rows } = await pool.query(
+    `SELECT group_attendance, attendance_data->'records' as attendance_records
+     FROM app_state WHERE id = 'singleton'`
+  );
+  if (rows.length === 0) return { groupAttendance: {}, attendanceRecords: {} };
+  return {
+    groupAttendance: rows[0].group_attendance || {},
+    attendanceRecords: rows[0].attendance_records || {},
+  };
+}
+
 // ── Users ──
 
 export async function findUserByUsername(username: string) {

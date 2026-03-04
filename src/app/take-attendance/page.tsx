@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
 import { AttendanceValue, SOMAttendanceValue } from '@/types';
@@ -40,6 +40,7 @@ export default function TakeAttendancePage() {
     activeMembers, events, loading,
     rosterData, groupAttendance, updateGroupAttendance,
     getEnabledDatesForGroup,
+    refreshAttendanceFromServer,
   } = useData();
 
   const [search, setSearch] = useState('');
@@ -197,6 +198,33 @@ export default function TakeAttendancePage() {
   };
 
   const hasData = allGroupMembers.length > 0;
+
+  // ── Real-time sync: poll server every 5s so multiple madrichim see each other's changes ──
+  useEffect(() => {
+    if (!hasData || groupEnabledDates.length === 0) return;
+
+    const poll = () => {
+      if (document.visibilityState === 'visible') {
+        refreshAttendanceFromServer();
+      }
+    };
+
+    // Poll every 5 seconds
+    const interval = setInterval(poll, 5000);
+
+    // Also refresh immediately when the tab becomes visible again
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshAttendanceFromServer();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [hasData, groupEnabledDates.length, refreshAttendanceFromServer]);
 
   if (loading) {
     return (
