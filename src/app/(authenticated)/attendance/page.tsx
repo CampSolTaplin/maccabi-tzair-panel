@@ -72,7 +72,8 @@ export default function AttendancePage() {
     attendance, isImported, setShowImportModal, updateAttendanceCell, events,
     getMemberStatus, dropMember, reactivateMember, addNewMember,
     activeMembers, droppedMembers,
-    rosterData, groupAttendance, updateGroupAttendance, enabledDates,
+    rosterData, groupAttendance, updateGroupAttendance,
+    getEnabledDatesForGroup,
   } = useData();
 
   const [selectedGroup, setSelectedGroup] = useState('som-legacy');
@@ -168,7 +169,7 @@ export default function AttendancePage() {
             rosterData={rosterData}
             groupAttendance={groupAttendance}
             updateGroupAttendance={updateGroupAttendance}
-            enabledDates={enabledDates}
+            enabledDates={getEnabledDatesForGroup(selectedGroup)}
             events={events}
           />
         )}

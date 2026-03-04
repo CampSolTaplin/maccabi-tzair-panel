@@ -33,7 +33,12 @@ interface DataContextType {
   removeAddedMember: (contactId: string) => void;
   // Enabled dates for attendance-taking
   enabledDates: string[];
-  toggleEnabledDate: (date: string) => void;
+  /** Per-date group assignments: date -> group keys (empty = all groups) */
+  enabledDateGroups: Record<string, string[]>;
+  toggleEnabledDate: (date: string, groups?: string[]) => void;
+  updateEnabledDateGroups: (date: string, groups: string[]) => void;
+  /** Get dates enabled for a specific group (filtered by enabledDateGroups) */
+  getEnabledDatesForGroup: (groupKey: string) => string[];
   // Roster
   rosterData: RosterData | null;
   importRoster: (data: RosterData) => void;
@@ -62,6 +67,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [memberOverrides, setMemberOverrides] = useState<Record<string, MemberOverride>>({});
   const [addedMembers, setAddedMembers] = useState<AddedMember[]>([]);
   const [enabledDates, setEnabledDates] = useState<string[]>([]);
+  const [enabledDateGroups, setEnabledDateGroups] = useState<Record<string, string[]>>({});
   const [rosterData, setRosterData] = useState<RosterData | null>(null);
   const [groupAttendance, setGroupAttendance] = useState<GroupAttendanceData>({});
   const [loading, setLoading] = useState(true);
@@ -90,6 +96,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         if (Array.isArray(data.addedMembers)) setAddedMembers(data.addedMembers);
         if (Array.isArray(data.enabledDates)) setEnabledDates(data.enabledDates);
+        if (data.enabledDateGroups && typeof data.enabledDateGroups === 'object') {
+          setEnabledDateGroups(data.enabledDateGroups);
+        }
         if (data.rosterData) setRosterData(data.rosterData as RosterData);
         if (data.groupAttendance && typeof data.groupAttendance === 'object') {
           setGroupAttendance(data.groupAttendance as GroupAttendanceData);
@@ -227,13 +236,54 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // ── Enabled dates ──
 
-  const toggleEnabledDate = useCallback((date: string) => {
+  const toggleEnabledDate = useCallback((date: string, groups?: string[]) => {
     setEnabledDates(prev => {
-      const next = prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date];
+      const removing = prev.includes(date);
+      const next = removing ? prev.filter(d => d !== date) : [...prev, date];
       saveToServer('enabledDates', next);
+
+      // If adding a date with groups, save the group mapping
+      if (!removing && groups && groups.length > 0) {
+        setEnabledDateGroups(prev2 => {
+          const next2 = { ...prev2, [date]: groups };
+          saveToServer('enabledDateGroups', next2);
+          return next2;
+        });
+      }
+      // If removing, clean up the group mapping
+      if (removing) {
+        setEnabledDateGroups(prev2 => {
+          const next2 = { ...prev2 };
+          delete next2[date];
+          saveToServer('enabledDateGroups', next2);
+          return next2;
+        });
+      }
       return next;
     });
   }, []);
+
+  const updateEnabledDateGroups = useCallback((date: string, groups: string[]) => {
+    setEnabledDateGroups(prev => {
+      const next = { ...prev };
+      if (groups.length === 0) {
+        delete next[date]; // empty = all groups
+      } else {
+        next[date] = groups;
+      }
+      saveToServer('enabledDateGroups', next);
+      return next;
+    });
+  }, []);
+
+  const getEnabledDatesForGroup = useCallback((groupKey: string): string[] => {
+    return enabledDates.filter(date => {
+      const groups = enabledDateGroups[date];
+      // No group assignment = all groups
+      if (!groups || groups.length === 0) return true;
+      return groups.includes(groupKey);
+    });
+  }, [enabledDates, enabledDateGroups]);
 
   // ── Roster ──
 
@@ -290,7 +340,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       memberOverrides, addedMembers, allMembers, activeMembers, droppedMembers,
       getMemberStatus, getMemberOverride,
       dropMember, reactivateMember, addNewMember, removeAddedMember,
-      enabledDates, toggleEnabledDate,
+      enabledDates, enabledDateGroups, toggleEnabledDate, updateEnabledDateGroups, getEnabledDatesForGroup,
       rosterData, importRoster,
       groupAttendance, updateGroupAttendance,
       loading,

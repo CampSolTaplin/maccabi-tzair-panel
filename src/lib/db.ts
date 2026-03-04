@@ -36,6 +36,9 @@ async function init() {
   await pool.query(`
     ALTER TABLE app_state ADD COLUMN IF NOT EXISTS group_attendance JSONB NOT NULL DEFAULT '{}'
   `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE app_state ADD COLUMN IF NOT EXISTS enabled_date_groups JSONB NOT NULL DEFAULT '{}'
+  `).catch(() => {});
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS mtz_users (
@@ -121,6 +124,7 @@ export async function loadAll() {
       memberOverrides: {},
       addedMembers: [],
       enabledDates: [],
+      enabledDateGroups: {},
       rosterData: null,
       groupAttendance: {},
     };
@@ -132,6 +136,7 @@ export async function loadAll() {
     memberOverrides: row.member_overrides,
     addedMembers: row.added_members,
     enabledDates: row.enabled_dates || [],
+    enabledDateGroups: row.enabled_date_groups || {},
     rosterData: row.roster_data || null,
     groupAttendance: row.group_attendance || {},
   };
@@ -143,6 +148,7 @@ const COLUMN_MAP: Record<string, string> = {
   memberOverrides: 'member_overrides',
   addedMembers: 'added_members',
   enabledDates: 'enabled_dates',
+  enabledDateGroups: 'enabled_date_groups',
   rosterData: 'roster_data',
   groupAttendance: 'group_attendance',
 };

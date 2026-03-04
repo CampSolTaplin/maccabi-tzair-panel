@@ -6,7 +6,7 @@ import { useData } from '@/lib/data-context';
 import { CommunityEvent, Chanich } from '@/types';
 import {
   Plus, Trash2, Users, Calendar, Clock, Award, Star,
-  X, Check, ClipboardPaste, Search, Tag,
+  X, Check, ClipboardPaste, Search, Tag, Download,
 } from 'lucide-react';
 
 // ── Group definitions (same as attendance page) ──
@@ -54,6 +54,67 @@ const AREA_COLORS: Record<string, { text: string; bg: string; border: string }> 
 function matchesGroup(groupKey: string, chanich: Chanich): boolean {
   if (PROGRAM_GROUPS.includes(groupKey)) return chanich.program === groupKey;
   return chanich.gradeLevel.toLowerCase().includes(groupKey.toLowerCase());
+}
+
+/** Find the group label for a chanich based on GROUP_DEFS */
+function getGroupForChanich(chanich: Chanich): string {
+  for (const g of GROUP_DEFS) {
+    if (matchesGroup(g.key, chanich)) return g.label;
+  }
+  return chanich.program || chanich.gradeLevel || '';
+}
+
+/** Generate and download CSV for an event's attendees */
+function downloadEventCSV(event: CommunityEvent, rosterData: { chanichim: Chanich[] } | null) {
+  if (!rosterData) return;
+
+  const attendeeSet = new Set(event.attendees);
+  const attendees = rosterData.chanichim.filter(c => attendeeSet.has(c.contactId));
+
+  const headers = [
+    'Nombre Completo', 'Genero', 'Edad', 'Grado', 'Escuela',
+    'Programa', 'Grupo', 'Cuenta (Familia)',
+    'Email Primario', 'Telefono Primario', 'Telefono Contacto',
+    'Contacto Emergencia', 'Telefono Emergencia',
+    'Alergias', 'Identificacion Judia', 'Servicio Comunitario', 'Kosher',
+  ];
+
+  const rows = attendees.map(c => [
+    c.fullName,
+    c.gender,
+    String(c.age || ''),
+    c.grade,
+    c.school,
+    c.program,
+    getGroupForChanich(c),
+    c.accountName,
+    c.primaryEmail,
+    c.primaryPhone,
+    c.contactPhone,
+    c.emergencyContactName,
+    c.emergencyPhone,
+    c.allergies,
+    c.jewishIdentification,
+    c.communityService,
+    c.keepKosher,
+  ]);
+
+  const escape = (val: string) => {
+    if (!val) return '';
+    if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+      return `"${val.replace(/"/g, '""')}"`;
+    }
+    return val;
+  };
+
+  const csv = [headers.join(','), ...rows.map(r => r.map(escape).join(','))].join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '_')}_${event.date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function EventsPage() {
@@ -233,6 +294,15 @@ function EventCard({
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#E8687D]/10 text-[#E8687D]">
             {event.realHours * event.multiplier}h por persona
           </span>
+          {event.attendees.length > 0 && (
+            <button
+              onClick={() => downloadEventCSV(event, rosterData)}
+              className="p-1.5 rounded-lg border border-[#D8E1EA] text-[#2D8B4E] hover:bg-green-50 transition-all"
+              title="Descargar listado CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button onClick={onEdit} className="px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all">
             Editar
           </button>

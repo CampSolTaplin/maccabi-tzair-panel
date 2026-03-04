@@ -37,8 +37,9 @@ export default function TakeAttendancePage() {
   const { user, logout } = useAuth();
   const {
     attendance, isImported, updateAttendanceCell,
-    activeMembers, enabledDates, events, loading,
+    activeMembers, events, loading,
     rosterData, groupAttendance, updateGroupAttendance,
+    getEnabledDatesForGroup,
   } = useData();
 
   const [search, setSearch] = useState('');
@@ -100,20 +101,28 @@ export default function TakeAttendancePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useRosterFlow, rosterData, userGroup, isImported, attendance, activeMembers]);
 
+  // Get dates enabled for this madrich's group
+  const groupEnabledDates = useMemo(() => {
+    return getEnabledDatesForGroup(userGroup);
+  }, [getEnabledDatesForGroup, userGroup]);
+
   // Sort enabled dates descending (most recent first), auto-select first
   const sortedEnabledDates = useMemo(() => {
-    return [...enabledDates].sort((a, b) => b.localeCompare(a));
-  }, [enabledDates]);
+    return [...groupEnabledDates].sort((a, b) => b.localeCompare(a));
+  }, [groupEnabledDates]);
 
   // Auto-select the most recent enabled date
-  const effectiveDate = selectedDate && enabledDates.includes(selectedDate)
+  const effectiveDate = selectedDate && groupEnabledDates.includes(selectedDate)
     ? selectedDate
     : sortedEnabledDates[0] || null;
 
-  // Map event dates to event names
+  // Map event dates to event names (only events relevant to this group)
   const eventByDate = useMemo(() => {
-    return new Map(events.map(e => [e.date, e.name]));
-  }, [events]);
+    const relevant = events.filter(e =>
+      !e.groups || e.groups.length === 0 || e.groups.includes(userGroup)
+    );
+    return new Map(relevant.map(e => [e.date, e.name]));
+  }, [events, userGroup]);
 
   // Filter and sort members
   const filteredMembers = useMemo(() => {
@@ -238,7 +247,7 @@ export default function TakeAttendancePage() {
         )}
 
         {/* No enabled dates */}
-        {hasData && enabledDates.length === 0 && (
+        {hasData && groupEnabledDates.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-8 text-center mt-8">
             <CalendarDays className="w-12 h-12 text-[#D8E1EA] mx-auto mb-3" />
             <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Sin fechas habilitadas</h3>
@@ -249,7 +258,7 @@ export default function TakeAttendancePage() {
         )}
 
         {/* Main attendance taking UI */}
-        {hasData && enabledDates.length > 0 && effectiveDate && (
+        {hasData && groupEnabledDates.length > 0 && effectiveDate && (
           <>
             {/* Date selector */}
             {sortedEnabledDates.length > 1 ? (

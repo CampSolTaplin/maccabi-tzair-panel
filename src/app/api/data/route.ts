@@ -29,7 +29,7 @@ export async function PUT(req: Request) {
   try {
     const { key, value } = await req.json();
 
-    const allowed = ['attendanceData', 'events', 'memberOverrides', 'addedMembers', 'enabledDates', 'rosterData', 'groupAttendance'];
+    const allowed = ['attendanceData', 'events', 'memberOverrides', 'addedMembers', 'enabledDates', 'enabledDateGroups', 'rosterData', 'groupAttendance'];
     if (!allowed.includes(key)) {
       return NextResponse.json({ error: 'Invalid key' }, { status: 400 });
     }
