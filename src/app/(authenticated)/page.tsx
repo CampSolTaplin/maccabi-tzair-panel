@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const {
     attendance, isImported, setShowImportModal, activeMembers,
     rosterData, groupAttendance, getEnabledDatesForGroup,
-    events, noSessionDates,
+    events, noSessionDates, enabledDates,
   } = useData();
 
   const [selectedGroup, setSelectedGroup] = useState<string>('som-legacy');
@@ -75,13 +75,20 @@ export default function DashboardPage() {
   const somKpis = useMemo(() => {
     if (!attendance) return null;
 
+    const noSessionSet = new Set(noSessionDates);
+
+    // Merge Excel dates + enabled dates (from Settings), exclude no-session dates
+    const allDates = [...new Set([...(attendance.dates || []), ...enabledDates])]
+      .filter(d => !noSessionSet.has(d))
+      .sort();
+
     const totalMembers = activeMembers.length;
-    const totalSessions = attendance.dates.length;
+    const totalSessions = allDates.length;
 
     let totalPresent = 0, totalLate = 0, totalAbsent = 0;
     for (const m of activeMembers) {
       const rec = attendance.records[m.contactId] || {};
-      for (const d of attendance.dates) {
+      for (const d of allDates) {
         if (rec[d] === true) totalPresent++;
         else if (rec[d] === 'late') totalLate++;
         else if (rec[d] === false) totalAbsent++;
@@ -90,20 +97,40 @@ export default function DashboardPage() {
     const totalMarked = totalPresent + totalLate + totalAbsent;
     const overallRate = totalMarked > 0 ? Math.round(((totalPresent + totalLate) / totalMarked) * 100) : 0;
 
-    // Last session
-    const lastDate = attendance.dates[attendance.dates.length - 1];
+    // Last session (most recent date with any marked data)
+    let lastDate = '';
+    for (let i = allDates.length - 1; i >= 0; i--) {
+      const d = allDates[i];
+      const hasData = activeMembers.some(m => {
+        const v = (attendance.records[m.contactId] || {})[d];
+        return v === true || v === 'late' || v === false;
+      });
+      if (hasData) { lastDate = d; break; }
+    }
+    if (!lastDate && allDates.length > 0) lastDate = allDates[allDates.length - 1];
+
     let lastPresent = 0, lastLate = 0, lastAbsent = 0;
-    for (const m of activeMembers) {
-      const v = (attendance.records[m.contactId] || {})[lastDate];
-      if (v === true) lastPresent++;
-      else if (v === 'late') lastLate++;
-      else if (v === false) lastAbsent++;
+    if (lastDate) {
+      for (const m of activeMembers) {
+        const v = (attendance.records[m.contactId] || {})[lastDate];
+        if (v === true) lastPresent++;
+        else if (v === 'late') lastLate++;
+        else if (v === false) lastAbsent++;
+      }
     }
     const lastTotal = lastPresent + lastLate + lastAbsent;
     const lastRate = lastTotal > 0 ? Math.round(((lastPresent + lastLate) / lastTotal) * 100) : 0;
 
-    // Monthly
-    const monthlyRates = attendance.months.map(month => {
+    // Monthly breakdown (built dynamically from merged dates)
+    const monthMap = new Map<string, { name: string; dates: string[] }>();
+    for (const d of allDates) {
+      const dt = new Date(d + 'T12:00:00');
+      const monthKey = `${dt.getFullYear()}-${String(dt.getMonth()).padStart(2, '0')}`;
+      const monthName = MONTH_NAMES[dt.getMonth()] || '';
+      if (!monthMap.has(monthKey)) monthMap.set(monthKey, { name: monthName, dates: [] });
+      monthMap.get(monthKey)!.dates.push(d);
+    }
+    const monthlyRates = Array.from(monthMap.values()).map(month => {
       let p = 0, l = 0, a = 0;
       for (const m of activeMembers) {
         const rec = attendance.records[m.contactId] || {};
@@ -121,7 +148,7 @@ export default function DashboardPage() {
     const memberRates = activeMembers.map(m => {
       const rec = attendance.records[m.contactId] || {};
       let p = 0, l = 0, a = 0;
-      for (const d of attendance.dates) {
+      for (const d of allDates) {
         if (rec[d] === true) p++;
         else if (rec[d] === 'late') l++;
         else if (rec[d] === false) a++;
@@ -138,7 +165,7 @@ export default function DashboardPage() {
       topMembers: memberRates.slice(0, 5),
       bottomMembers: [...memberRates].sort((a, b) => a.rate - b.rate).slice(0, 5),
     };
-  }, [attendance, activeMembers]);
+  }, [attendance, activeMembers, enabledDates, noSessionDates]);
 
   // ── Group-based KPIs ──
   const groupKpis = useMemo(() => {
