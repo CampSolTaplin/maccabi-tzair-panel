@@ -62,7 +62,9 @@ export default function TakeAttendancePage() {
   };
 
   // Determine data source: roster-based or legacy SOM
+  // SOM always uses the legacy Excel flow (admin manages SOM via the SOM Excel grid)
   const useRosterFlow = useMemo(() => {
+    if (userGroup === 'SOM') return false;
     if (!rosterData) return false;
     const rosterMembers = rosterData.chanichim.filter(c =>
       matchesGroup(c.gradeLevel, c.program)
