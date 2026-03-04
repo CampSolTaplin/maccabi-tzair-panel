@@ -84,7 +84,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             setIsImported(true);
           }
         }
-        if (Array.isArray(data.events)) setEvents(data.events);
+        if (Array.isArray(data.events)) setEvents(data.events.map((e: CommunityEvent) => ({ ...e, groups: e.groups || [] })));
         if (data.memberOverrides && typeof data.memberOverrides === 'object') {
           setMemberOverrides(data.memberOverrides);
         }

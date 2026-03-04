@@ -92,4 +92,6 @@ export interface CommunityEvent {
   multiplier: number;
   /** Contact IDs of members who attended */
   attendees: string[];
+  /** Group keys this event applies to (e.g. ['Kinder', '1st Grade', 'SOM']) */
+  groups: string[];
 }

@@ -228,10 +228,13 @@ function GroupAttendanceGrid({
   // Sorted dates (ascending)
   const dates = useMemo(() => [...enabledDates].sort(), [enabledDates]);
 
-  // Map event dates to event names
+  // Map event dates to event names (only events that include this group)
   const eventByDate = useMemo(() => {
-    return new Map(events.map(e => [e.date, e.name]));
-  }, [events]);
+    const relevant = events.filter(e =>
+      !e.groups || e.groups.length === 0 || e.groups.includes(groupKey)
+    );
+    return new Map(relevant.map(e => [e.date, e.name]));
+  }, [events, groupKey]);
 
   const getVal = (contactId: string, date: string): AttendanceValue => {
     return groupAttendance[groupKey]?.[contactId]?.[date] ?? null;
@@ -531,11 +534,12 @@ function SOMAttendanceGrid() {
     return month ? month.dates : attendance.dates;
   }, [attendance, selectedMonth]);
 
-  // Build unified columns with month tag
+  // Build unified columns with month tag (only events that apply to SOM)
   const allColumns = useMemo(() => {
     const cols: GridColumn[] = visibleSessionDates.map(d => ({ type: 'session' as ColumnType, date: d, month: getMonth(d) }));
     if (showEvents) {
-      for (const evt of events) {
+      const somEvents = events.filter(e => !e.groups || e.groups.length === 0 || e.groups.includes('SOM'));
+      for (const evt of somEvents) {
         const evtMonth = getMonth(evt.date);
         if (selectedMonth !== 'all' && evtMonth !== selectedMonth) continue;
         cols.push({ type: 'event', date: evt.date, event: evt, month: evtMonth });
