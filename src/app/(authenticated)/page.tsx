@@ -8,7 +8,7 @@ import { Users, TrendingUp, CalendarCheck, Upload, UserCheck, AlertTriangle } fr
 
 // ── Group definitions (same as attendance page) ──
 
-const PROGRAM_GROUPS = ['Pre-SOM', 'SOM', 'Trips', 'Machanot'];
+const PROGRAM_GROUPS = ['Pre-SOM', 'Trips', 'Machanot'];
 
 interface GroupDef {
   key: string;
@@ -28,7 +28,6 @@ const GROUP_DEFS: GroupDef[] = [
   { key: '7th Grade', label: '7th Grade', area: 'Noar', color: 'text-purple-700' },
   { key: '8th Grade', label: '8th Grade', area: 'Noar', color: 'text-purple-700' },
   { key: 'Pre-SOM', label: 'Pre-SOM', area: 'Leadership', color: 'text-amber-700' },
-  { key: 'SOM', label: 'SOM (Roster)', area: 'Leadership', color: 'text-green-700' },
   { key: 'Trips', label: 'Trips', area: 'Special', color: 'text-rose-700' },
   { key: 'Machanot', label: 'Machanot', area: 'Special', color: 'text-cyan-700' },
 ];

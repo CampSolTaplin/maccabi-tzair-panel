@@ -33,7 +33,7 @@ function getMonth(iso: string) {
 
 // ── Group definitions for attendance tabs ──
 
-const PROGRAM_GROUPS = ['Pre-SOM', 'SOM', 'Trips', 'Machanot'];
+const PROGRAM_GROUPS = ['Pre-SOM', 'Trips', 'Machanot'];
 
 interface GroupDef {
   key: string;
@@ -53,7 +53,6 @@ const GROUP_DEFS: GroupDef[] = [
   { key: '7th Grade', label: '7th Grade', area: 'Noar', color: 'text-purple-700' },
   { key: '8th Grade', label: '8th Grade', area: 'Noar', color: 'text-purple-700' },
   { key: 'Pre-SOM', label: 'Pre-SOM', area: 'Leadership', color: 'text-amber-700' },
-  { key: 'SOM', label: 'SOM (Roster)', area: 'Leadership', color: 'text-green-700' },
   { key: 'Trips', label: 'Trips', area: 'Special', color: 'text-rose-700' },
   { key: 'Machanot', label: 'Machanot', area: 'Special', color: 'text-cyan-700' },
 ];
@@ -506,6 +505,8 @@ function SOMAttendanceGrid() {
     attendance, isImported, setShowImportModal, updateAttendanceCell, events,
     getMemberStatus, dropMember, reactivateMember, addNewMember,
     activeMembers, droppedMembers,
+    enabledDates: contextEnabledDates,
+    noSessionDates: contextNoSessionDates,
   } = useData();
   const [search, setSearch] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('all');
@@ -563,13 +564,31 @@ function SOMAttendanceGrid() {
     });
   }, [baseMembers, search, sortField, sortDir]);
 
+  // Merge Excel dates with enabled dates from Settings (for SOM group)
+  const allSessionDates = useMemo(() => {
+    if (!attendance) return contextEnabledDates.length > 0 ? [...contextEnabledDates].sort() : [];
+    const dateSet = new Set([...attendance.dates, ...contextEnabledDates]);
+    return [...dateSet].sort();
+  }, [attendance, contextEnabledDates]);
+
+  // Build month groups from merged dates
+  const allMonths = useMemo(() => {
+    const monthMap = new Map<string, string[]>();
+    const monthOrder: string[] = [];
+    for (const d of allSessionDates) {
+      const m = getMonth(d);
+      if (!monthMap.has(m)) { monthMap.set(m, []); monthOrder.push(m); }
+      monthMap.get(m)!.push(d);
+    }
+    return monthOrder.map(name => ({ name, dates: monthMap.get(name)! }));
+  }, [allSessionDates]);
+
   // Filter dates by selected month
   const visibleSessionDates = useMemo(() => {
-    if (!attendance) return [];
-    if (selectedMonth === 'all') return attendance.dates;
-    const month = attendance.months.find(m => m.name === selectedMonth);
-    return month ? month.dates : attendance.dates;
-  }, [attendance, selectedMonth]);
+    if (selectedMonth === 'all') return allSessionDates;
+    const month = allMonths.find(m => m.name === selectedMonth);
+    return month ? month.dates : allSessionDates;
+  }, [allSessionDates, allMonths, selectedMonth]);
 
   // Build unified columns with month tag (only events that apply to SOM)
   const allColumns = useMemo(() => {
@@ -591,11 +610,12 @@ function SOMAttendanceGrid() {
     return allColumns.filter(c => !collapsedMonths.has(c.month));
   }, [allColumns, collapsedMonths]);
 
-  // Detect "no session" dates
+  // Detect "no session" dates (auto-detected from all-null + context no-session dates)
   const noSessionDates = useMemo(() => {
-    if (!attendance) return new Set<string>();
-    const set = new Set<string>();
+    const set = new Set<string>(contextNoSessionDates);
+    if (!attendance) return set;
     for (const d of visibleSessionDates) {
+      if (set.has(d)) continue; // already marked
       let allNull = true;
       for (const m of attendance.members) {
         const val = (attendance.records[m.contactId] || {})[d];
@@ -604,7 +624,7 @@ function SOMAttendanceGrid() {
       if (allNull) set.add(d);
     }
     return set;
-  }, [attendance, visibleSessionDates]);
+  }, [attendance, visibleSessionDates, contextNoSessionDates]);
 
   // Month groups for header — including collapsed placeholders
   const monthGroups = useMemo(() => {
@@ -644,15 +664,21 @@ function SOMAttendanceGrid() {
     return result;
   }, [allColumns, collapsedMonths]);
 
-  // Per-member stats
+  // Event dates set (to exclude from % calculation)
+  const eventDateSet = useMemo(() => {
+    const somEvents = events.filter(e => !e.groups || e.groups.length === 0 || e.groups.includes('SOM'));
+    return new Set(somEvents.map(e => e.date));
+  }, [events]);
+
+  // Per-member stats (% excludes event dates + no-session dates)
   const memberStats = useMemo(() => {
     if (!attendance) return new Map<string, { present: number; late: number; absent: number; total: number; rate: number }>();
     const stats = new Map<string, { present: number; late: number; absent: number; total: number; rate: number }>();
-    const activeDates = visibleSessionDates.filter(d => !noSessionDates.has(d));
+    const regularDates = visibleSessionDates.filter(d => !noSessionDates.has(d) && !eventDateSet.has(d));
     for (const m of filteredMembers) {
       const rec = attendance.records[m.contactId] || {};
       let present = 0, late = 0, absent = 0;
-      for (const d of activeDates) {
+      for (const d of regularDates) {
         const v = rec[d];
         if (v === true) present++;
         else if (v === 'late') late++;
@@ -663,7 +689,7 @@ function SOMAttendanceGrid() {
       stats.set(m.contactId, { present, late, absent, total, rate: total > 0 ? Math.round((effectivePresent / total) * 100) : 0 });
     }
     return stats;
-  }, [attendance, visibleSessionDates, noSessionDates, filteredMembers]);
+  }, [attendance, visibleSessionDates, noSessionDates, eventDateSet, filteredMembers]);
 
   // Per-date stats
   const dateStats = useMemo(() => {
@@ -736,7 +762,7 @@ function SOMAttendanceGrid() {
             <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}
               className="px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm bg-white focus:outline-none focus:border-[#2A3D8F]">
               <option value="all">All months</option>
-              {attendance.months.map(m => (
+              {allMonths.map(m => (
                 <option key={m.name} value={m.name}>{m.name} ({m.dates.length})</option>
               ))}
             </select>
