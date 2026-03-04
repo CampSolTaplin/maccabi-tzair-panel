@@ -180,7 +180,7 @@ export default function TakeAttendancePage() {
     if (!useRosterFlow) return null;
     const sections = new Map<string, MemberEntry[]>();
     for (const m of filteredMembers) {
-      const gl = m.gradeLevel || 'Sin clasificar';
+      const gl = m.gradeLevel || 'Unclassified';
       if (!sections.has(gl)) sections.set(gl, []);
       sections.get(gl)!.push(m);
     }
@@ -190,10 +190,10 @@ export default function TakeAttendancePage() {
 
   const formatDateDisplay = (iso: string) => {
     const d = new Date(iso + 'T12:00:00');
-    const weekday = d.toLocaleDateString('es-ES', { weekday: 'long' });
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
     const day = d.getDate();
-    const month = d.toLocaleDateString('es-ES', { month: 'long' });
-    return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${day} de ${month}`;
+    const month = d.toLocaleDateString('en-US', { month: 'long' });
+    return `${weekday}, ${month} ${day}`;
   };
 
   const hasData = allGroupMembers.length > 0;
@@ -217,7 +217,7 @@ export default function TakeAttendancePage() {
               <img src="/maccabi-logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-[#C5E3F6] leading-tight">Asistencia</h1>
+              <h1 className="text-sm font-bold text-[#C5E3F6] leading-tight">Attendance</h1>
               <span className="text-[0.65rem] text-white/40">{groupLabel}</span>
             </div>
           </div>
@@ -239,9 +239,9 @@ export default function TakeAttendancePage() {
         {!hasData && (
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-8 text-center mt-8">
             <Users className="w-12 h-12 text-[#D8E1EA] mx-auto mb-3" />
-            <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Sin datos</h3>
+            <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">No data</h3>
             <p className="text-sm text-[#5A6472]">
-              El administrador aun no ha importado la lista de {groupLabel}.
+              The administrator has not yet imported the {groupLabel} roster.
             </p>
           </div>
         )}
@@ -250,9 +250,9 @@ export default function TakeAttendancePage() {
         {hasData && groupEnabledDates.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-8 text-center mt-8">
             <CalendarDays className="w-12 h-12 text-[#D8E1EA] mx-auto mb-3" />
-            <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Sin fechas habilitadas</h3>
+            <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">No enabled dates</h3>
             <p className="text-sm text-[#5A6472]">
-              El administrador no ha habilitado ninguna fecha para tomar asistencia.
+              The administrator has not enabled any dates for taking attendance.
             </p>
           </div>
         )}
@@ -264,7 +264,7 @@ export default function TakeAttendancePage() {
             {sortedEnabledDates.length > 1 ? (
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
-                  Fecha
+                  Date
                 </label>
                 <div className="relative">
                   <select
@@ -310,19 +310,19 @@ export default function TakeAttendancePage() {
             <div className="grid grid-cols-4 gap-2 mb-4">
               <div className="bg-white rounded-xl border border-[#D8E1EA] p-2.5 text-center">
                 <div className="text-lg font-bold text-[#2D8B4E]">{stats.present}</div>
-                <div className="text-[0.6rem] text-[#5A6472] uppercase font-medium">Presente</div>
+                <div className="text-[0.6rem] text-[#5A6472] uppercase font-medium">Present</div>
               </div>
               <div className="bg-white rounded-xl border border-[#D8E1EA] p-2.5 text-center">
                 <div className="text-lg font-bold text-[#E89B3A]">{stats.late}</div>
-                <div className="text-[0.6rem] text-[#5A6472] uppercase font-medium">Tarde</div>
+                <div className="text-[0.6rem] text-[#5A6472] uppercase font-medium">Late</div>
               </div>
               <div className="bg-white rounded-xl border border-[#D8E1EA] p-2.5 text-center">
                 <div className="text-lg font-bold text-[#C0392B]">{stats.absent}</div>
-                <div className="text-[0.6rem] text-[#5A6472] uppercase font-medium">Ausente</div>
+                <div className="text-[0.6rem] text-[#5A6472] uppercase font-medium">Absent</div>
               </div>
               <div className="bg-white rounded-xl border border-[#D8E1EA] p-2.5 text-center">
                 <div className="text-lg font-bold text-[#5A6472]">{stats.unmarked}</div>
-                <div className="text-[0.6rem] text-[#5A6472] uppercase font-medium">Sin marcar</div>
+                <div className="text-[0.6rem] text-[#5A6472] uppercase font-medium">Unmarked</div>
               </div>
             </div>
 
@@ -331,7 +331,7 @@ export default function TakeAttendancePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6472]" />
               <input
                 type="text"
-                placeholder="Buscar participante..."
+                placeholder="Search participant..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-[#D8E1EA] text-sm bg-white focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
@@ -377,7 +377,7 @@ export default function TakeAttendancePage() {
 
             {filteredMembers.length === 0 && (
               <div className="text-center py-8 text-sm text-[#5A6472]">
-                No se encontraron participantes
+                No participants found
               </div>
             )}
 
@@ -416,7 +416,7 @@ function MemberRow({ name, value, onSet }: {
                 ? 'bg-[#2D8B4E] text-white shadow-sm'
                 : 'bg-[#f0eeea] text-[#999] hover:bg-[#2D8B4E]/10 hover:text-[#2D8B4E]'
             }`}
-            title="Presente"
+            title="Present"
           >
             <Check className="w-4.5 h-4.5" />
           </button>
@@ -427,7 +427,7 @@ function MemberRow({ name, value, onSet }: {
                 ? 'bg-[#E89B3A] text-white shadow-sm'
                 : 'bg-[#f0eeea] text-[#999] hover:bg-[#E89B3A]/10 hover:text-[#E89B3A]'
             }`}
-            title="Tarde"
+            title="Late"
           >
             <Clock className="w-4.5 h-4.5" />
           </button>
@@ -438,7 +438,7 @@ function MemberRow({ name, value, onSet }: {
                 ? 'bg-[#C0392B] text-white shadow-sm'
                 : 'bg-[#f0eeea] text-[#999] hover:bg-[#C0392B]/10 hover:text-[#C0392B]'
             }`}
-            title="Ausente"
+            title="Absent"
           >
             <X className="w-4.5 h-4.5" />
           </button>

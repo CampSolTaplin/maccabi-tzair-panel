@@ -26,7 +26,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Error al iniciar sesión');
+        setError(data.error || 'Login error');
         return;
       }
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
       router.push(redirectTo);
       router.refresh();
     } catch {
-      setError('Error de conexión');
+      setError('Connection error');
     } finally {
       setLoading(false);
     }
@@ -57,12 +57,12 @@ export default function LoginPage() {
           <h1 className="font-serif text-2xl font-bold text-[#C5E3F6] mb-1">
             School of Madrichim
           </h1>
-          <p className="text-sm text-white/40">Panel de Control — Maccabi Tzair Miami</p>
+          <p className="text-sm text-white/40">Control Panel — Maccabi Tzair Miami</p>
         </div>
 
         {/* Login Card */}
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-7">
-          <h2 className="text-lg font-serif font-bold text-[#1B2A6B] mb-5">Iniciar Sesión</h2>
+          <h2 className="text-lg font-serif font-bold text-[#1B2A6B] mb-5">Sign In</h2>
 
           {error && (
             <div className="flex items-center gap-2 px-4 py-3 mb-4 rounded-lg bg-red-50 text-[#C0392B] text-sm">
@@ -73,13 +73,13 @@ export default function LoginPage() {
 
           <div className="mb-4">
             <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
-              Usuario
+              Username
             </label>
             <input
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              placeholder="nombre de usuario"
+              placeholder="username"
               autoComplete="username"
               className="w-full px-4 py-2.5 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
               required
@@ -88,7 +88,7 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
-              Contraseña
+              Password
             </label>
             <div className="relative">
               <input
@@ -118,7 +118,7 @@ export default function LoginPage() {
             {loading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <><LogIn className="w-4 h-4" /> Ingresar</>
+              <><LogIn className="w-4 h-4" /> Log In</>
             )}
           </button>
         </form>

@@ -41,7 +41,7 @@ const AREA_LABELS: Record<string, string> = {
   Katan: 'Katan (K-5)',
   Noar: 'Noar (6-8)',
   Leadership: 'Leadership',
-  Special: 'Especiales',
+  Special: 'Special',
 };
 
 const AREA_COLORS: Record<string, { text: string; bg: string; border: string }> = {
@@ -72,11 +72,11 @@ function downloadEventCSV(event: CommunityEvent, rosterData: { chanichim: Chanic
   const attendees = rosterData.chanichim.filter(c => attendeeSet.has(c.contactId));
 
   const headers = [
-    'Nombre Completo', 'Genero', 'Edad', 'Grado', 'Escuela',
-    'Programa', 'Grupo', 'Cuenta (Familia)',
-    'Email Primario', 'Telefono Primario', 'Telefono Contacto',
-    'Contacto Emergencia', 'Telefono Emergencia',
-    'Alergias', 'Identificacion Judia', 'Servicio Comunitario', 'Kosher',
+    'Full Name', 'Gender', 'Age', 'Grade', 'School',
+    'Program', 'Group', 'Account (Family)',
+    'Primary Email', 'Primary Phone', 'Contact Phone',
+    'Emergency Contact', 'Emergency Phone',
+    'Allergies', 'Jewish Identification', 'Community Service', 'Kosher',
   ];
 
   const rows = attendees.map(c => [
@@ -146,7 +146,7 @@ export default function EventsPage() {
 
   return (
     <>
-      <Topbar title="Eventos Comunitarios" subtitle="Gestionar eventos y asignar grupos" />
+      <Topbar title="Community Events" subtitle="Manage events and assign groups" />
       <div className="p-5">
         {/* Controls */}
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-4 mb-4">
@@ -159,7 +159,7 @@ export default function EventsPage() {
                 onChange={e => setFilterGroup(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]"
               >
-                <option value="all">Todos los grupos</option>
+                <option value="all">All groups</option>
                 {Object.entries(AREA_LABELS).map(([area, label]) => (
                   <optgroup key={area} label={label}>
                     {availableGroups.filter(g => g.area === area).map(g => (
@@ -176,7 +176,7 @@ export default function EventsPage() {
               onClick={() => { setEditingEvent(null); setShowEventModal(true); }}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#E8687D] text-white text-sm font-medium hover:bg-[#D4566A] transition-all"
             >
-              <Plus className="w-4 h-4" /> Nuevo Evento
+              <Plus className="w-4 h-4" /> New Event
             </button>
           </div>
         </div>
@@ -185,19 +185,19 @@ export default function EventsPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
           <div className="bg-white rounded-xl border border-[#D8E1EA] p-4 text-center">
             <div className="text-2xl font-serif font-bold text-[#E89B3A]">{events.length}</div>
-            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Total Eventos</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Total Events</div>
           </div>
           <div className="bg-white rounded-xl border border-[#D8E1EA] p-4 text-center">
             <div className="text-2xl font-serif font-bold text-[#1B2A6B]">{filteredEvents.length}</div>
             <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">
-              {filterGroup === 'all' ? 'Mostrando' : `Eventos: ${filterGroup}`}
+              {filterGroup === 'all' ? 'Showing' : `Events: ${filterGroup}`}
             </div>
           </div>
           <div className="bg-white rounded-xl border border-[#D8E1EA] p-4 text-center">
             <div className="text-2xl font-serif font-bold text-[#2D8B4E]">
               {events.reduce((sum, e) => sum + e.realHours * e.multiplier, 0)}h
             </div>
-            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Horas Totales</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Total Hours</div>
           </div>
         </div>
 
@@ -206,19 +206,19 @@ export default function EventsPage() {
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-10 text-center">
             <Star className="w-10 h-10 text-[#D8E1EA] mx-auto mb-3" />
             <h3 className="text-base font-semibold text-[#1B2A6B] mb-1">
-              {events.length === 0 ? 'No hay eventos' : 'No hay eventos para este grupo'}
+              {events.length === 0 ? 'No events' : 'No events for this group'}
             </h3>
             <p className="text-sm text-[#5A6472] mb-4">
               {events.length === 0
-                ? 'Crea un evento comunitario para asignar horas a los participantes.'
-                : 'Intenta con otro filtro de grupo.'}
+                ? 'Create a community event to assign hours to participants.'
+                : 'Try a different group filter.'}
             </p>
             {events.length === 0 && (
               <button
                 onClick={() => { setEditingEvent(null); setShowEventModal(true); }}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#E8687D] text-white text-sm font-medium hover:bg-[#D4566A] transition-all mx-auto"
               >
-                <Plus className="w-4 h-4" /> Crear Primer Evento
+                <Plus className="w-4 h-4" /> Create First Event
               </button>
             )}
           </div>
@@ -283,7 +283,7 @@ function EventCard({
           <div className="flex items-center gap-4 mt-1 text-sm text-[#5A6472]">
             <span className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
-              {new Date(event.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {new Date(event.date + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
             <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{event.realHours}h</span>
             <span className="flex items-center gap-1"><Award className="w-3.5 h-3.5" />&times;{event.multiplier}</span>
@@ -292,19 +292,19 @@ function EventCard({
         </div>
         <div className="flex items-center gap-2">
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#E8687D]/10 text-[#E8687D]">
-            {event.realHours * event.multiplier}h por persona
+            {event.realHours * event.multiplier}h per person
           </span>
           {event.attendees.length > 0 && (
             <button
               onClick={() => downloadEventCSV(event, rosterData)}
               className="p-1.5 rounded-lg border border-[#D8E1EA] text-[#2D8B4E] hover:bg-green-50 transition-all"
-              title="Descargar listado CSV"
+              title="Download CSV list"
             >
               <Download className="w-3.5 h-3.5" />
             </button>
           )}
           <button onClick={onEdit} className="px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all">
-            Editar
+            Edit
           </button>
           <button onClick={onDelete} className="p-1.5 rounded-lg border border-red-200 text-[#C0392B] hover:bg-red-50 transition-all">
             <Trash2 className="w-3.5 h-3.5" />
@@ -328,7 +328,7 @@ function EventCard({
       {event.groups.length === 0 && (
         <div className="flex items-center gap-1.5 mb-3 text-xs text-[#5A6472]">
           <Tag className="w-3 h-3" />
-          <span className="italic">Sin grupos asignados</span>
+          <span className="italic">No groups assigned</span>
         </div>
       )}
 
@@ -342,7 +342,7 @@ function EventCard({
           ))}
           {attendeeNames.length > 20 && (
             <span className="px-2 py-0.5 rounded-full bg-[#f4f2ee] text-[0.7rem] text-[#5A6472] font-medium">
-              +{attendeeNames.length - 20} mas
+              +{attendeeNames.length - 20} more
             </span>
           )}
         </div>
@@ -500,7 +500,7 @@ function EventModal({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#D8E1EA]">
           <h2 className="font-serif font-bold text-lg text-[#1B2A6B]">
-            {event ? 'Editar Evento' : 'Nuevo Evento Comunitario'}
+            {event ? 'Edit Event' : 'New Community Event'}
           </h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f4f2ee]">
             <X className="w-4 h-4" />
@@ -513,13 +513,13 @@ function EventModal({
             onClick={() => setStep('details')}
             className={`flex-1 py-2.5 text-sm font-medium transition-all ${step === 'details' ? 'text-[#1B2A6B] border-b-2 border-[#1B2A6B]' : 'text-[#5A6472]'}`}
           >
-            1. Detalles y Grupos
+            1. Details & Groups
           </button>
           <button
             onClick={() => setStep('attendees')}
             className={`flex-1 py-2.5 text-sm font-medium transition-all ${step === 'attendees' ? 'text-[#1B2A6B] border-b-2 border-[#1B2A6B]' : 'text-[#5A6472]'}`}
           >
-            2. Asistentes ({attendees.size})
+            2. Attendees ({attendees.size})
           </button>
         </div>
 
@@ -529,23 +529,23 @@ function EventModal({
               {/* Event details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Nombre del Evento</label>
-                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Purim Fest, Machane Invierno..."
+                  <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Event Name</label>
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="E.g.: Purim Fest, Winter Machane..."
                     className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Fecha</label>
+                  <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Date</label>
                   <input type="date" value={date} onChange={e => setDate(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Duracion Real (horas)</label>
+                  <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Real Duration (hours)</label>
                   <input type="number" min={0.5} max={24} step={0.5} value={realHours} onChange={e => setRealHours(Number(e.target.value))}
                     className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">
-                    Multiplicador de Horas Comunitarias
+                    Community Hours Multiplier
                   </label>
                   <div className="flex gap-2">
                     {[1, 2, 3, 4].map(m => (
@@ -557,13 +557,13 @@ function EventModal({
                         }`}>
                         &times;{m}
                         <span className="block text-[0.65rem] font-normal mt-0.5">
-                          {m === 1 ? '1:1' : `${m} por hora`}
+                          {m === 1 ? '1:1' : `${m} per hour`}
                         </span>
                       </button>
                     ))}
                   </div>
                   <p className="text-xs text-[#5A6472] mt-2">
-                    Cada asistente recibira <strong className="text-[#1B2A6B]">{realHours * multiplier} horas comunitarias</strong> ({realHours}h &times; {multiplier})
+                    Each attendee will receive <strong className="text-[#1B2A6B]">{realHours * multiplier} community hours</strong> ({realHours}h &times; {multiplier})
                   </p>
                 </div>
               </div>
@@ -571,10 +571,10 @@ function EventModal({
               {/* Group selection */}
               <div>
                 <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-2">
-                  Grupos Participantes
+                  Participating Groups
                 </label>
                 <p className="text-xs text-[#5A6472] mb-3">
-                  Selecciona los grupos que participan en este evento. Los asistentes se filtraran por estos grupos.
+                  Select the groups participating in this event. Attendees will be filtered by these groups.
                 </p>
 
                 <div className="space-y-3">
@@ -619,7 +619,7 @@ function EventModal({
 
                 {selectedGroups.size > 0 && (
                   <p className="text-xs text-[#2D8B4E] mt-2 font-medium">
-                    {selectedGroups.size} grupo{selectedGroups.size !== 1 ? 's' : ''} seleccionado{selectedGroups.size !== 1 ? 's' : ''} &middot; {eligibleMembers.length} participantes elegibles
+                    {selectedGroups.size} group{selectedGroups.size !== 1 ? 's' : ''} selected &middot; {eligibleMembers.length} eligible participants
                   </p>
                 )}
               </div>
@@ -629,15 +629,15 @@ function EventModal({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-semibold text-[#5A6472] uppercase tracking-wider">
-                  Asistentes ({attendees.size}/{eligibleMembers.length})
+                  Attendees ({attendees.size}/{eligibleMembers.length})
                 </label>
                 <div className="flex gap-2">
                   <button onClick={() => { setShowPaste(!showPaste); setPasteResult(null); }}
                     className={`flex items-center gap-1 text-xs font-medium hover:underline ${showPaste ? 'text-[#E8687D]' : 'text-[#E89B3A]'}`}>
-                    <ClipboardPaste className="w-3 h-3" />{showPaste ? 'Cerrar' : 'Pegar Nombres'}
+                    <ClipboardPaste className="w-3 h-3" />{showPaste ? 'Close' : 'Paste Names'}
                   </button>
-                  <button onClick={selectAllVisible} className="text-xs text-[#1B2A6B] font-medium hover:underline">Todos</button>
-                  <button onClick={clearAll} className="text-xs text-[#C0392B] font-medium hover:underline">Limpiar</button>
+                  <button onClick={selectAllVisible} className="text-xs text-[#1B2A6B] font-medium hover:underline">Select All</button>
+                  <button onClick={clearAll} className="text-xs text-[#C0392B] font-medium hover:underline">Clear</button>
                 </div>
               </div>
 
@@ -645,27 +645,27 @@ function EventModal({
               {showPaste && (
                 <div className="mb-3 p-3 rounded-lg border border-[#E89B3A]/40 bg-[#FFF8F0]">
                   <p className="text-xs text-[#5A6472] mb-2">
-                    Pega nombres (uno por linea, separados por coma o punto y coma).
+                    Paste names (one per line, separated by comma or semicolon).
                   </p>
                   <textarea
                     value={pasteText}
                     onChange={e => { setPasteText(e.target.value); setPasteResult(null); }}
-                    placeholder={"Juan Perez\nMaria Garcia\nLopez, Carlos"}
+                    placeholder={"John Smith\nJane Doe\nDoe, Carlos"}
                     rows={4}
                     className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm mb-2 focus:outline-none focus:border-[#E89B3A] resize-none font-mono"
                   />
                   <button onClick={processPaste} disabled={!pasteText.trim()}
                     className="px-4 py-1.5 rounded-lg bg-[#E89B3A] text-white text-xs font-semibold hover:bg-[#D08A2F] transition-all disabled:opacity-40">
-                    Procesar y Seleccionar
+                    Process & Select
                   </button>
 
                   {pasteResult && (
                     <div className="mt-2 text-xs">
                       {pasteResult.matched.length > 0 && (
-                        <p className="text-[#2D8B4E]">{pasteResult.matched.length} encontrados: {pasteResult.matched.join(', ')}</p>
+                        <p className="text-[#2D8B4E]">{pasteResult.matched.length} found: {pasteResult.matched.join(', ')}</p>
                       )}
                       {pasteResult.unmatched.length > 0 && (
-                        <p className="text-[#C0392B] mt-1">{pasteResult.unmatched.length} no encontrados: {pasteResult.unmatched.join(', ')}</p>
+                        <p className="text-[#C0392B] mt-1">{pasteResult.unmatched.length} not found: {pasteResult.unmatched.join(', ')}</p>
                       )}
                     </div>
                   )}
@@ -676,13 +676,13 @@ function EventModal({
               <div className="relative mb-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6472]" />
                 <input type="text" value={searchMember} onChange={e => setSearchMember(e.target.value)}
-                  placeholder="Filtrar participantes..."
+                  placeholder="Filter participants..."
                   className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
               </div>
 
               {!rosterData ? (
                 <div className="text-center py-6 text-sm text-[#5A6472]">
-                  Importa un roster primero para ver participantes.
+                  Import a roster first to see participants.
                 </div>
               ) : (
                 <div className="max-h-[300px] overflow-y-auto border border-[#D8E1EA] rounded-lg">
@@ -714,21 +714,21 @@ function EventModal({
           <div>
             {step === 'attendees' && (
               <button onClick={() => setStep('details')} className="px-4 py-2 rounded-lg border border-[#D8E1EA] text-sm font-medium hover:bg-[#f8f7f5] transition-all">
-                &larr; Volver
+                &larr; Back
               </button>
             )}
           </div>
           <div className="flex gap-3">
-            <button onClick={onClose} className="px-5 py-2 rounded-lg border border-[#D8E1EA] text-sm font-medium hover:bg-[#f8f7f5] transition-all">Cancelar</button>
+            <button onClick={onClose} className="px-5 py-2 rounded-lg border border-[#D8E1EA] text-sm font-medium hover:bg-[#f8f7f5] transition-all">Cancel</button>
             {step === 'details' ? (
               <button onClick={() => setStep('attendees')}
                 className="px-5 py-2 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all">
-                Siguiente &rarr;
+                Next &rarr;
               </button>
             ) : (
               <button onClick={handleSave} disabled={!name.trim()}
                 className="px-5 py-2 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all disabled:opacity-40">
-                {event ? 'Guardar Cambios' : 'Crear Evento'}
+                {event ? 'Save Changes' : 'Create Event'}
               </button>
             )}
           </div>

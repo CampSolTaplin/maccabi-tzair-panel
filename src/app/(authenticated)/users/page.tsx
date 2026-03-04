@@ -38,7 +38,7 @@ export default function UsersPage() {
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este usuario?')) return;
+    if (!confirm('Are you sure you want to delete this user?')) return;
     setDeleting(id);
     try {
       const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
@@ -46,10 +46,10 @@ export default function UsersPage() {
         setUsers(prev => prev.filter(u => u.id !== id));
       } else {
         const data = await res.json();
-        alert(data.error || 'Error al eliminar');
+        alert(data.error || 'Error deleting user');
       }
     } catch {
-      alert('Error de conexión');
+      alert('Connection error');
     } finally {
       setDeleting(null);
     }
@@ -58,11 +58,11 @@ export default function UsersPage() {
   if (currentUser?.role !== 'admin') {
     return (
       <>
-        <Topbar title="Usuarios" subtitle="Gestión de usuarios del sistema" />
+        <Topbar title="Users" subtitle="System user management" />
         <div className="p-7">
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-12 text-center">
             <Shield className="w-12 h-12 text-[#D0CCC4] mx-auto mb-3" />
-            <p className="text-[#5A6472] font-medium">No tienes permisos para ver esta sección</p>
+            <p className="text-[#5A6472] font-medium">You do not have permission to view this section</p>
           </div>
         </div>
       </>
@@ -71,18 +71,18 @@ export default function UsersPage() {
 
   return (
     <>
-      <Topbar title="Usuarios" subtitle="Gestión de usuarios del sistema" />
+      <Topbar title="Users" subtitle="System user management" />
       <div className="p-7 max-w-4xl">
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-6">
           <div className="flex items-center justify-between mb-5 pb-3 border-b border-[#D8E1EA]">
             <h3 className="text-base font-semibold text-[#1B2A6B] flex items-center gap-2">
-              <Shield className="w-4 h-4 text-[#E8687D]" /> Usuarios del Sistema
+              <Shield className="w-4 h-4 text-[#E8687D]" /> System Users
             </h3>
             <button
               onClick={() => setShowModal(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#1B2A6B] text-white text-xs font-medium hover:bg-[#2A3D8F] transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" /> Nuevo Usuario
+              <Plus className="w-3.5 h-3.5" /> New User
             </button>
           </div>
 
@@ -91,15 +91,15 @@ export default function UsersPage() {
               <div className="w-8 h-8 border-3 border-[#1B2A6B]/20 border-t-[#1B2A6B] rounded-full animate-spin" />
             </div>
           ) : users.length === 0 ? (
-            <p className="text-center text-[#5A6472] py-8">No hay usuarios registrados</p>
+            <p className="text-center text-[#5A6472] py-8">No registered users</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#D8E1EA]">
-                  <th className="text-left py-2.5 px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-[#5A6472]">Usuario</th>
-                  <th className="text-left py-2.5 px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-[#5A6472]">Nombre</th>
-                  <th className="text-left py-2.5 px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-[#5A6472]">Rol</th>
-                  <th className="text-left py-2.5 px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-[#5A6472]">Creado</th>
+                  <th className="text-left py-2.5 px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-[#5A6472]">Username</th>
+                  <th className="text-left py-2.5 px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-[#5A6472]">Name</th>
+                  <th className="text-left py-2.5 px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-[#5A6472]">Role</th>
+                  <th className="text-left py-2.5 px-3 text-[0.7rem] font-semibold uppercase tracking-wider text-[#5A6472]">Created</th>
                   <th className="w-12"></th>
                 </tr>
               </thead>
@@ -125,7 +125,7 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-[#5A6472] text-xs">
-                      {new Date(u.created_at).toLocaleDateString('es')}
+                      {new Date(u.created_at).toLocaleDateString('en-US')}
                     </td>
                     <td className="py-3 px-3">
                       {u.id !== currentUser?.id && (
@@ -165,7 +165,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
     setError('');
 
     if (role === 'madrich' && !groupName.trim()) {
-      setError('El grupo es requerido para usuarios Madrich');
+      setError('Group is required for Madrich users');
       return;
     }
 
@@ -186,13 +186,13 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Error al crear usuario');
+        setError(data.error || 'Error creating user');
         return;
       }
 
       onCreated();
     } catch {
-      setError('Error de conexión');
+      setError('Connection error');
     } finally {
       setSaving(false);
     }
@@ -202,7 +202,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-serif font-bold text-[#1B2A6B]">Nuevo Usuario</h3>
+          <h3 className="text-lg font-serif font-bold text-[#1B2A6B]">New User</h3>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-[#F2F0EC] transition-colors">
             <X className="w-5 h-5 text-[#5A6472]" />
           </button>
@@ -218,13 +218,13 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
-              Nombre de usuario
+              Username
             </label>
             <input
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              placeholder="usuario123"
+              placeholder="user123"
               className="w-full px-4 py-2.5 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
               required
             />
@@ -232,13 +232,13 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
           <div className="mb-4">
             <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
-              Nombre para mostrar
+              Display Name
             </label>
             <input
               type="text"
               value={displayName}
               onChange={e => setDisplayName(e.target.value)}
-              placeholder="Juan Pérez"
+              placeholder="John Doe"
               className="w-full px-4 py-2.5 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
               required
             />
@@ -246,13 +246,13 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
           <div className="mb-4">
             <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
-              Contraseña
+              Password
             </label>
             <input
               type="text"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="contraseña segura"
+              placeholder="secure password"
               className="w-full px-4 py-2.5 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
               required
             />
@@ -260,7 +260,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
           <div className="mb-4">
             <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
-              Rol
+              Role
             </label>
             <select
               value={role}
@@ -277,7 +277,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           {role === 'madrich' && (
             <div className="mb-4">
               <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1.5">
-                Grupo
+                Group
               </label>
               <input
                 type="text"
@@ -288,7 +288,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
                 required
               />
               <p className="mt-1 text-xs text-[#5A6472]">
-                Nombre del grupo que este madrich podrá gestionar (ej: SOM)
+                Name of the group this madrich will manage (e.g.: SOM)
               </p>
             </div>
           )}
@@ -299,14 +299,14 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
               onClick={onClose}
               className="flex-1 py-2.5 rounded-lg border border-[#D8E1EA] text-sm font-medium text-[#5A6472] hover:bg-[#F2F0EC] transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
               className="flex-1 py-2.5 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-colors disabled:opacity-50"
             >
-              {saving ? 'Creando...' : 'Crear Usuario'}
+              {saving ? 'Creating...' : 'Create User'}
             </button>
           </div>
         </form>

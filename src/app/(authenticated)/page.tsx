@@ -79,18 +79,18 @@ export default function DashboardPage() {
   if (!isImported || !kpis) {
     return (
       <>
-        <Topbar title="Dashboard SOM" subtitle="School of Madrichim — Temporada 2025/2026" />
+        <Topbar title="Dashboard SOM" subtitle="School of Madrichim — Season 2025/2026" />
         <div className="p-7">
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-12 text-center">
             <div className="w-16 h-16 rounded-full bg-[#E3F2FD] mx-auto mb-4 flex items-center justify-center">
               <Upload className="w-8 h-8 text-[#1B2A6B]" />
             </div>
-            <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Bienvenido al Panel SOM</h3>
+            <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Welcome to the SOM Dashboard</h3>
             <p className="text-sm text-[#5A6472] max-w-md mx-auto mb-6">
-              Importá el archivo de asistencia SOM para ver estadísticas, tendencias y métricas de participación.
+              Import the SOM attendance file to view statistics, trends, and participation metrics.
             </p>
             <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-6 py-3 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all mx-auto">
-              <Upload className="w-4 h-4" /> Importar Asistencia
+              <Upload className="w-4 h-4" /> Import Attendance
             </button>
           </div>
         </div>
@@ -100,25 +100,25 @@ export default function DashboardPage() {
 
   const fmtLast = () => {
     const d = new Date(kpis.lastDate + 'T12:00:00');
-    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    return d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
   };
 
   return (
     <>
-      <Topbar title="Dashboard SOM" subtitle="School of Madrichim — Temporada 2025/2026" />
+      <Topbar title="Dashboard SOM" subtitle="School of Madrichim — Season 2025/2026" />
       <div className="p-7">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
-          <KPI icon={Users} label="Miembros SOM" value={kpis.totalMembers} accent="#1B2A6B" bg="rgba(27,42,107,0.08)" sub={`${kpis.totalSessions} sesiones registradas`} />
-          <KPI icon={TrendingUp} label="Asistencia General" value={`${kpis.overallRate}%`} accent="#2D8B4E" bg="rgba(45,139,78,0.1)" sub={`${kpis.totalPresent} presentes totales`} />
-          <KPI icon={CalendarCheck} label="Última Sesión" value={`${kpis.lastRate}%`} accent="#E8687D" bg="rgba(232,104,125,0.12)" sub={fmtLast()} />
-          <KPI icon={UserCheck} label="Presentes Última" value={`${kpis.lastPresent}/${kpis.lastPresent + kpis.lastAbsent}`} accent="#E89B3A" bg="rgba(232,155,58,0.1)" sub={`${kpis.lastPresent} presentes · ${kpis.lastAbsent} ausentes`} />
+          <KPI icon={Users} label="SOM Members" value={kpis.totalMembers} accent="#1B2A6B" bg="rgba(27,42,107,0.08)" sub={`${kpis.totalSessions} sessions recorded`} />
+          <KPI icon={TrendingUp} label="Overall Attendance" value={`${kpis.overallRate}%`} accent="#2D8B4E" bg="rgba(45,139,78,0.1)" sub={`${kpis.totalPresent} total present`} />
+          <KPI icon={CalendarCheck} label="Last Session" value={`${kpis.lastRate}%`} accent="#E8687D" bg="rgba(232,104,125,0.12)" sub={fmtLast()} />
+          <KPI icon={UserCheck} label="Last Present" value={`${kpis.lastPresent}/${kpis.lastPresent + kpis.lastAbsent}`} accent="#E89B3A" bg="rgba(232,155,58,0.1)" sub={`${kpis.lastPresent} present · ${kpis.lastAbsent} absent`} />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {/* Monthly rates */}
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
             <div className="px-5 py-4 border-b border-[#D8E1EA]">
-              <h3 className="text-[0.95rem] font-semibold text-[#1B2A6B]">Asistencia por Mes</h3>
+              <h3 className="text-[0.95rem] font-semibold text-[#1B2A6B]">Attendance by Month</h3>
             </div>
             <div className="px-5 py-3">
               {kpis.monthlyRates.map(m => (
@@ -141,7 +141,7 @@ export default function DashboardPage() {
             <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
               <div className="px-5 py-3 border-b border-[#D8E1EA] flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-[#2D8B4E]" />
-                <h3 className="text-[0.85rem] font-semibold text-[#1B2A6B]">Mayor Asistencia</h3>
+                <h3 className="text-[0.85rem] font-semibold text-[#1B2A6B]">Highest Attendance</h3>
               </div>
               <div className="px-5 py-2">
                 {kpis.topMembers.map((m, i) => (
@@ -158,7 +158,7 @@ export default function DashboardPage() {
             <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] overflow-hidden">
               <div className="px-5 py-3 border-b border-[#D8E1EA] flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-[#C0392B]" />
-                <h3 className="text-[0.85rem] font-semibold text-[#1B2A6B]">Menor Asistencia</h3>
+                <h3 className="text-[0.85rem] font-semibold text-[#1B2A6B]">Lowest Attendance</h3>
               </div>
               <div className="px-5 py-2">
                 {kpis.bottomMembers.map((m, i) => (

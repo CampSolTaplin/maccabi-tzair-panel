@@ -67,7 +67,7 @@ export function parseSOMAttendance(buffer: ArrayBuffer): SOMAttendanceData {
   }
 
   if (dates.length === 0) {
-    throw new Error('No se encontraron fechas de sesión en el archivo.');
+    throw new Error('No session dates found in the file.');
   }
 
   // Parse members and their attendance (starting at row 3)

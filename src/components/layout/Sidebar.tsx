@@ -21,13 +21,13 @@ import { useAuth } from '@/lib/auth-context';
 const navItems = [
   { section: 'Maccabi Tzair' },
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/attendance', label: 'Asistencia', icon: ClipboardCheck },
-  { href: '/events', label: 'Eventos', icon: CalendarDays },
-  { href: '/hours', label: 'Horas Comunitarias', icon: HandHeart },
+  { href: '/attendance', label: 'Attendance', icon: ClipboardCheck },
+  { href: '/events', label: 'Events', icon: CalendarDays },
+  { href: '/hours', label: 'Community Hours', icon: HandHeart },
   { href: '/roster', label: 'Rosters', icon: Users },
-  { section: 'Sistema' },
-  { href: '/settings', label: 'Configuración', icon: Settings },
-  { href: '/users', label: 'Usuarios', icon: Shield, adminOnly: true },
+  { section: 'System' },
+  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/users', label: 'Users', icon: Shield, adminOnly: true },
 ];
 
 export default function Sidebar() {
@@ -141,7 +141,7 @@ export default function Sidebar() {
             onClick={logout}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
           >
-            <LogOut className="w-3.5 h-3.5" /> Cerrar sesión
+            <LogOut className="w-3.5 h-3.5" /> Log Out
           </button>
         </div>
       )}

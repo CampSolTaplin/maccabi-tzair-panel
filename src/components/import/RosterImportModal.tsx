@@ -57,7 +57,7 @@ export default function RosterImportModal({
       setResult(data);
       importRoster(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error desconocido al procesar el archivo.');
+      setError(e instanceof Error ? e.message : 'Unknown error processing the file.');
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ export default function RosterImportModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#D8E1EA]">
           <div className="flex items-center gap-3">
             <FileSpreadsheet className="w-5 h-5 text-[#1B2A6B]" />
-            <h2 className="font-serif font-bold text-lg text-[#1B2A6B]">Importar Roster</h2>
+            <h2 className="font-serif font-bold text-lg text-[#1B2A6B]">Import Roster</h2>
           </div>
           <button onClick={close} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[#f4f2ee] transition-colors">
             <X className="w-4 h-4 text-[#5A6472]" />
@@ -110,7 +110,7 @@ export default function RosterImportModal({
           {loading ? (
             <div className="text-center py-10">
               <div className="w-10 h-10 border-3 border-[#1B2A6B] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-sm text-[#5A6472]">Procesando archivo de Salesforce...</p>
+              <p className="text-sm text-[#5A6472]">Processing Salesforce file...</p>
             </div>
           ) : result ? (
             /* Success */
@@ -118,16 +118,16 @@ export default function RosterImportModal({
               <div className="flex items-center gap-3 mb-5">
                 <CheckCircle2 className="w-8 h-8 text-[#2D8B4E]" />
                 <div>
-                  <h3 className="font-semibold text-[#1A1A2E]">Roster importado correctamente</h3>
+                  <h3 className="font-semibold text-[#1A1A2E]">Roster imported successfully</h3>
                   <p className="text-sm text-[#5A6472]">
-                    {result.chanichim.length} participantes en {groupCounts.length} grupos
+                    {result.chanichim.length} participants in {groupCounts.length} groups
                   </p>
                 </div>
               </div>
 
               {/* Group breakdown */}
               <div className="bg-[#FAFAF8] rounded-lg p-3 mb-4">
-                <p className="text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-2">Participantes por grupo</p>
+                <p className="text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-2">Participants by group</p>
                 <div className="space-y-1.5">
                   {groupCounts.map(g => (
                     <div key={g.program} className="flex items-center justify-between py-1">
@@ -141,20 +141,20 @@ export default function RosterImportModal({
               </div>
 
               <button onClick={close} className="w-full py-2.5 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all">
-                Ver Rosters
+                View Rosters
               </button>
             </div>
           ) : error ? (
             /* Error */
             <div className="text-center py-6">
               <AlertCircle className="w-10 h-10 text-[#C0392B] mx-auto mb-3" />
-              <h3 className="font-semibold text-[#1A1A2E] mb-1">Error al importar</h3>
+              <h3 className="font-semibold text-[#1A1A2E] mb-1">Import error</h3>
               <p className="text-sm text-[#C0392B] mb-4">{error}</p>
               <button
                 onClick={() => { setError(null); inputRef.current?.click(); }}
                 className="px-5 py-2 rounded-lg border border-[#D8E1EA] text-sm font-medium hover:bg-[#f8f7f5] transition-all"
               >
-                Intentar de nuevo
+                Try again
               </button>
             </div>
           ) : (
@@ -163,8 +163,8 @@ export default function RosterImportModal({
               {rosterData && (
                 <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
                   <p className="text-sm text-amber-800">
-                    Ya hay un roster importado ({rosterData.chanichim.length} participantes).
-                    Subir un archivo nuevo actualizara los datos existentes.
+                    There is already an imported roster ({rosterData.chanichim.length} participants).
+                    Uploading a new file will update the existing data.
                   </p>
                 </div>
               )}
@@ -182,10 +182,10 @@ export default function RosterImportModal({
               >
                 <Upload className="w-10 h-10 text-[#5A6472] mx-auto mb-3" />
                 <p className="text-sm font-medium text-[#1A1A2E] mb-1">
-                  Arrastra el reporte de Salesforce
+                  Drag the Salesforce report here
                 </p>
                 <p className="text-xs text-[#5A6472]">
-                  Formato: Hebraica Roster .xlsx
+                  Format: Hebraica Roster .xlsx
                 </p>
                 <input
                   ref={inputRef}
@@ -197,7 +197,7 @@ export default function RosterImportModal({
               </div>
 
               <p className="text-xs text-[#5A6472] mt-3 text-center">
-                El archivo debe contener: Full Name, Contact ID, Course Option Enrollment ID, Full Course Option Name
+                The file must contain: Full Name, Contact ID, Course Option Enrollment ID, Full Course Option Name
               </p>
             </div>
           )}

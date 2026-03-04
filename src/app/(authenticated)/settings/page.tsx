@@ -35,7 +35,7 @@ const AREA_LABELS: Record<string, string> = {
   Katan: 'Katan (K-5)',
   Noar: 'Noar (6-8)',
   Leadership: 'Leadership',
-  Special: 'Especiales',
+  Special: 'Special',
 };
 
 const AREA_COLORS: Record<string, { text: string; border: string }> = {
@@ -89,16 +89,16 @@ export default function SettingsPage() {
 
   const formatDate = (iso: string) => {
     const d = new Date(iso + 'T12:00:00');
-    const weekday = d.toLocaleDateString('es-ES', { weekday: 'long' });
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
     const day = d.getDate();
-    const month = d.toLocaleDateString('es-ES', { month: 'long' });
+    const month = d.toLocaleDateString('en-US', { month: 'long' });
     const year = d.getFullYear();
-    return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${day} de ${month} ${year}`;
+    return `${weekday} ${month} ${day}, ${year}`;
   };
 
   const formatDateShort = (iso: string) => {
     const d = new Date(iso + 'T12:00:00');
-    return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
   const handleAddDate = () => {
@@ -162,23 +162,23 @@ export default function SettingsPage() {
 
   return (
     <>
-      <Topbar title="Configuracion" subtitle="Ajustes del sistema" />
+      <Topbar title="Settings" subtitle="System settings" />
       <div className="p-7 max-w-4xl">
         {/* Attendance Dates for Madrichim */}
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-6 mb-5">
           <h3 className="text-base font-semibold text-[#1B2A6B] mb-4 pb-3 border-b border-[#D8E1EA] flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-[#E8687D]" /> Habilitar Asistencia (Madrichim)
+            <CalendarDays className="w-4 h-4 text-[#E8687D]" /> Enable Attendance (Madrichim)
           </h3>
           <p className="text-xs text-[#5A6472] mb-4">
-            Habilita las fechas en las que los Madrichim pueden tomar asistencia.
-            Podes elegir si la fecha aplica a todos los grupos o solo a algunos.
+            Enable the dates on which Madrichim can take attendance.
+            You can choose whether the date applies to all groups or only some.
           </p>
 
           {/* Quick enable from events */}
           {unenbledEvents.length > 0 && (
             <div className="mb-4">
               <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-2">
-                Eventos sin asistencia habilitada
+                Events without attendance enabled
               </label>
               <div className="space-y-1.5">
                 {unenbledEvents.map(ev => (
@@ -208,7 +208,7 @@ export default function SettingsPage() {
                       onClick={() => toggleEnabledDate(ev.date, ev.groups)}
                       className="flex items-center gap-1 px-3 py-1 rounded-lg bg-[#E89B3A] text-white text-xs font-medium hover:bg-[#D08A2F] transition-all flex-shrink-0 ml-2"
                     >
-                      <Zap className="w-3 h-3" /> Habilitar
+                      <Zap className="w-3 h-3" /> Enable
                     </button>
                   </div>
                 ))}
@@ -219,7 +219,7 @@ export default function SettingsPage() {
           {/* Add date manually with group selector */}
           <div className="mb-4 p-4 rounded-lg border border-[#D8E1EA] bg-[#FAFAF8]">
             <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-2">
-              Agregar fecha manualmente
+              Add date manually
             </label>
             <div className="flex items-center gap-2 mb-3">
               <input
@@ -233,7 +233,7 @@ export default function SettingsPage() {
                 disabled={!newDate || enabledDates.includes(newDate)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Plus className="w-4 h-4" /> Habilitar
+                <Plus className="w-4 h-4" /> Enable
               </button>
             </div>
 
@@ -242,7 +242,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2 mb-2">
                 <Tag className="w-3.5 h-3.5 text-[#5A6472]" />
                 <span className="text-[0.7rem] font-semibold text-[#5A6472] uppercase tracking-wider">
-                  Grupos {newDateGroups.size === 0 ? '(Todos)' : `(${newDateGroups.size} seleccionados)`}
+                  Groups {newDateGroups.size === 0 ? '(All)' : `(${newDateGroups.size} selected)`}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -281,7 +281,7 @@ export default function SettingsPage() {
                 })}
               </div>
               {newDateGroups.size === 0 && (
-                <p className="text-[0.65rem] text-[#999] mt-1.5">Sin seleccion = habilitada para todos los grupos</p>
+                <p className="text-[0.65rem] text-[#999] mt-1.5">No selection = enabled for all groups</p>
               )}
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function SettingsPage() {
           {/* Enabled dates list */}
           {sortedEnabledDates.length === 0 ? (
             <div className="text-center py-6 text-sm text-[#5A6472] bg-[#f8f7f5] rounded-lg">
-              No hay fechas habilitadas. Los Madrichim no pueden tomar asistencia.
+              No enabled dates. Madrichim cannot take attendance.
             </div>
           ) : (
             <div className="space-y-2">
@@ -324,18 +324,18 @@ export default function SettingsPage() {
                               ? 'bg-[#2D8B4E] text-white hover:bg-[#24734A]'
                               : 'border border-[#D8E1EA] text-[#5A6472] hover:bg-white'
                           }`}
-                          title={isEditing ? 'Guardar grupos' : 'Editar grupos'}
+                          title={isEditing ? 'Save groups' : 'Edit groups'}
                         >
                           {isEditing ? (
-                            <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Guardar</span>
+                            <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Save</span>
                           ) : (
-                            <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> Grupos</span>
+                            <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> Groups</span>
                           )}
                         </button>
                         <button
                           onClick={() => toggleEnabledDate(date)}
                           className="p-1.5 rounded-lg text-[#C0392B] hover:bg-red-50 transition-all"
-                          title="Deshabilitar fecha"
+                          title="Disable date"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -357,7 +357,7 @@ export default function SettingsPage() {
                     )}
                     {!isEditing && dateGroups.length === 0 && (
                       <div className="px-4 pb-2.5">
-                        <span className="text-[0.6rem] text-[#999] italic">Todos los grupos</span>
+                        <span className="text-[0.6rem] text-[#999] italic">All groups</span>
                       </div>
                     )}
 
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                           })}
                         </div>
                         {editGroups.size === 0 && (
-                          <p className="text-[0.6rem] text-[#999] mt-1">Sin seleccion = habilitada para todos</p>
+                          <p className="text-[0.6rem] text-[#999] mt-1">No selection = enabled for all</p>
                         )}
                       </div>
                     )}
@@ -414,15 +414,15 @@ export default function SettingsPage() {
         {/* Data Source */}
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-6 mb-5">
           <h3 className="text-base font-semibold text-[#1B2A6B] mb-4 pb-3 border-b border-[#D8E1EA] flex items-center gap-2">
-            <Database className="w-4 h-4 text-[#E8687D]" /> Datos de Asistencia
+            <Database className="w-4 h-4 text-[#E8687D]" /> Attendance Data
           </h3>
           <div className="flex items-center justify-between py-3">
             <div>
-              <h4 className="text-sm font-medium">Archivo de Asistencia SOM</h4>
+              <h4 className="text-sm font-medium">SOM Attendance File</h4>
               <p className="text-xs text-[#5A6472] mt-0.5">
                 {isImported && attendance
-                  ? `${attendance.members.length} miembros · ${attendance.dates.length} sesiones · ${attendance.months.length} meses`
-                  : 'Subir el archivo SOM ATTENDANCE.xlsx'
+                  ? `${attendance.members.length} members · ${attendance.dates.length} sessions · ${attendance.months.length} months`
+                  : 'Upload the SOM ATTENDANCE.xlsx file'
                 }
               </p>
             </div>
@@ -430,13 +430,13 @@ export default function SettingsPage() {
               {isImported && (
                 <>
                   <span className="flex items-center gap-1 text-xs text-[#2D8B4E] font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Activo
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Active
                   </span>
                   <button
                     onClick={clearImport}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-xs font-medium text-[#C0392B] hover:bg-red-50 transition-all"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> Borrar
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>
                 </>
               )}
@@ -444,7 +444,7 @@ export default function SettingsPage() {
                 onClick={() => setShowImportModal(true)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all"
               >
-                <Upload className="w-3.5 h-3.5" /> {isImported ? 'Reimportar' : 'Subir Archivo'}
+                <Upload className="w-3.5 h-3.5" /> {isImported ? 'Re-import' : 'Upload File'}
               </button>
             </div>
           </div>
@@ -453,14 +453,14 @@ export default function SettingsPage() {
         {/* Notifications */}
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-6 mb-5">
           <h3 className="text-base font-semibold text-[#1B2A6B] mb-4 pb-3 border-b border-[#D8E1EA] flex items-center gap-2">
-            <Bell className="w-4 h-4 text-[#E8687D]" /> Notificaciones
+            <Bell className="w-4 h-4 text-[#E8687D]" /> Notifications
           </h3>
           <div className="flex items-center justify-between py-3 border-b border-[#f4f2ee]">
-            <div><h4 className="text-sm font-medium">Alertas de baja asistencia</h4><p className="text-xs text-[#5A6472] mt-0.5">Notificar cuando la asistencia baje del 40%</p></div>
+            <div><h4 className="text-sm font-medium">Low attendance alerts</h4><p className="text-xs text-[#5A6472] mt-0.5">Notify when attendance drops below 40%</p></div>
             <Toggle defaultOn />
           </div>
           <div className="flex items-center justify-between py-3">
-            <div><h4 className="text-sm font-medium">Reporte semanal por email</h4><p className="text-xs text-[#5A6472] mt-0.5">Resumen de asistencia cada domingo</p></div>
+            <div><h4 className="text-sm font-medium">Weekly email report</h4><p className="text-xs text-[#5A6472] mt-0.5">Attendance summary every Sunday</p></div>
             <Toggle />
           </div>
         </div>
@@ -468,18 +468,18 @@ export default function SettingsPage() {
         {/* Season */}
         <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-6">
           <h3 className="text-base font-semibold text-[#1B2A6B] mb-4 pb-3 border-b border-[#D8E1EA] flex items-center gap-2">
-            <Palette className="w-4 h-4 text-[#E8687D]" /> Temporada
+            <Palette className="w-4 h-4 text-[#E8687D]" /> Season
           </h3>
           <div className="flex items-center justify-between py-3 border-b border-[#f4f2ee]">
-            <div><h4 className="text-sm font-medium">Temporada Activa</h4><p className="text-xs text-[#5A6472] mt-0.5">2025/2026</p></div>
+            <div><h4 className="text-sm font-medium">Active Season</h4><p className="text-xs text-[#5A6472] mt-0.5">2025/2026</p></div>
             <select className="px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-sm bg-white">
               <option>2025/2026</option><option>2024/2025</option>
             </select>
           </div>
           <div className="flex items-center justify-between py-3">
-            <div><h4 className="text-sm font-medium">Horario SOM</h4><p className="text-xs text-[#5A6472] mt-0.5">Miercoles + Sabados</p></div>
+            <div><h4 className="text-sm font-medium">SOM Schedule</h4><p className="text-xs text-[#5A6472] mt-0.5">Wednesdays + Saturdays</p></div>
             <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all">
-              <Edit className="w-3.5 h-3.5" /> Editar
+              <Edit className="w-3.5 h-3.5" /> Edit
             </button>
           </div>
         </div>

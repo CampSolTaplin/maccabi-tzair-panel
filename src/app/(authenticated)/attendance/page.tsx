@@ -23,8 +23,8 @@ type SortField = 'lastName' | 'firstName';
 type SortDir = 'asc' | 'desc';
 
 const MONTH_NAMES: Record<number, string> = {
-  0: 'Enero', 1: 'Febrero', 2: 'Marzo', 3: 'Abril', 4: 'Mayo', 5: 'Junio',
-  6: 'Julio', 7: 'Agosto', 8: 'Septiembre', 9: 'Octubre', 10: 'Noviembre', 11: 'Diciembre',
+  0: 'January', 1: 'February', 2: 'March', 3: 'April', 4: 'May', 5: 'June',
+  6: 'July', 7: 'August', 8: 'September', 9: 'October', 10: 'November', 11: 'December',
 };
 
 function getMonth(iso: string) {
@@ -100,19 +100,19 @@ export default function AttendancePage() {
   }, [availableGroups]);
 
   const subtitle = selectedGroup === 'som-legacy'
-    ? 'Control de asistencia — SOM (Importacion Excel)'
-    : `Control de asistencia — ${availableGroups.find(g => g.key === selectedGroup)?.label || selectedGroup}`;
+    ? 'Attendance tracking — SOM (Excel Import)'
+    : `Attendance tracking — ${availableGroups.find(g => g.key === selectedGroup)?.label || selectedGroup}`;
 
   return (
     <>
-      <Topbar title="Asistencia" subtitle={subtitle} />
+      <Topbar title="Attendance" subtitle={subtitle} />
       <div className="p-5">
         {/* Group selector tabs */}
         {(availableGroups.length > 0 || isImported) && (
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-4 mb-4">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4 text-[#5A6472]" />
-              <span className="text-xs font-semibold text-[#5A6472] uppercase tracking-wider">Grupo</span>
+              <span className="text-xs font-semibold text-[#5A6472] uppercase tracking-wider">Group</span>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
               {/* SOM Legacy tab */}
@@ -292,7 +292,7 @@ function GroupAttendanceGrid({
     const d = new Date(iso + 'T12:00:00');
     return {
       day: d.getDate(),
-      weekday: d.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3),
+      weekday: d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3),
       month: MONTH_NAMES[d.getMonth()] || '',
     };
   };
@@ -302,9 +302,9 @@ function GroupAttendanceGrid({
     return (
       <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-12 text-center">
         <Users className="w-14 h-14 text-[#D8E1EA] mx-auto mb-4" />
-        <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Sin datos de roster</h3>
+        <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">No roster data</h3>
         <p className="text-sm text-[#5A6472] max-w-md mx-auto">
-          Importa el roster de Salesforce en la seccion Rosters para ver la asistencia de este grupo.
+          Import the roster from Salesforce in the Rosters section to view attendance for this group.
         </p>
       </div>
     );
@@ -314,9 +314,9 @@ function GroupAttendanceGrid({
     return (
       <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-12 text-center">
         <CalendarDays className="w-14 h-14 text-[#D8E1EA] mx-auto mb-4" />
-        <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Sin fechas habilitadas</h3>
+        <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">No enabled dates</h3>
         <p className="text-sm text-[#5A6472] max-w-md mx-auto">
-          Habilita fechas en Configuracion &gt; Habilitar Asistencia para que los madrichim puedan tomar asistencia.
+          Enable dates in Settings &gt; Enable Attendance so that madrichim can take attendance.
         </p>
       </div>
     );
@@ -329,26 +329,26 @@ function GroupAttendanceGrid({
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6472]" />
-            <input type="text" placeholder="Buscar participante..." value={search} onChange={(e) => setSearch(e.target.value)}
+            <input type="text" placeholder="Search participant..." value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F] focus:ring-2 focus:ring-[#2A3D8F]/10" />
           </div>
           <span className="text-xs text-[#5A6472]">
-            {filteredMembers.length} participantes · {dates.length} fechas
+            {filteredMembers.length} participants · {dates.length} dates
           </span>
         </div>
 
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#f0eeea] flex-wrap">
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-            <span className="inline-block w-3.5 h-3.5 rounded bg-[#2D8B4E] text-white text-[0.5rem] font-bold leading-[14px] text-center">✓</span> Presente
+            <span className="inline-block w-3.5 h-3.5 rounded bg-[#2D8B4E] text-white text-[0.5rem] font-bold leading-[14px] text-center">✓</span> Present
           </span>
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-            <span className="inline-block w-3.5 h-3.5 rounded bg-[#E89B3A] text-white text-[0.5rem] font-bold leading-[14px] text-center">L</span> Tarde
+            <span className="inline-block w-3.5 h-3.5 rounded bg-[#E89B3A] text-white text-[0.5rem] font-bold leading-[14px] text-center">L</span> Late
           </span>
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-            <span className="inline-block w-3.5 h-3.5 rounded bg-[#C0392B] text-white text-[0.5rem] font-bold leading-[14px] text-center">✗</span> Ausente
+            <span className="inline-block w-3.5 h-3.5 rounded bg-[#C0392B] text-white text-[0.5rem] font-bold leading-[14px] text-center">✗</span> Absent
           </span>
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-            <span className="inline-block w-3.5 h-3.5 rounded bg-[#f0eeea] text-[#C5CDD8] text-[0.5rem] leading-[14px] text-center">&mdash;</span> Sin dato
+            <span className="inline-block w-3.5 h-3.5 rounded bg-[#f0eeea] text-[#C5CDD8] text-[0.5rem] leading-[14px] text-center">&mdash;</span> No data
           </span>
         </div>
       </div>
@@ -361,7 +361,7 @@ function GroupAttendanceGrid({
             <thead className="sticky top-0 z-30">
               <tr className="bg-[#1B2A6B]">
                 <th className="sticky left-0 z-40 bg-[#1B2A6B] px-3 py-2.5 text-left text-white font-semibold min-w-[200px]">
-                  Nombre
+                  Name
                 </th>
                 <th className="sticky left-[200px] z-40 bg-[#1B2A6B] px-2 py-2.5 text-center text-white font-semibold min-w-[44px]">%</th>
                 {dates.map(d => {
@@ -403,7 +403,7 @@ function GroupAttendanceGrid({
                           <button
                             onClick={() => handleCellClick(member.contactId, d)}
                             className="inline-flex items-center justify-center w-5 h-5 rounded text-[0.6rem] font-bold leading-5 transition-all hover:scale-110 hover:shadow-sm cursor-pointer"
-                            title={`Click: ${val === true ? '\u2192 Tarde' : val === 'late' ? '\u2192 Ausente' : val === false ? '\u2192 Sin dato' : '\u2192 Presente'}`}
+                            title={`Click: ${val === true ? '\u2192 Late' : val === 'late' ? '\u2192 Absent' : val === false ? '\u2192 No data' : '\u2192 Present'}`}
                           >
                             {val === true
                               ? <span className="w-5 h-5 rounded bg-[#2D8B4E] text-white leading-5 text-center">✓</span>
@@ -422,7 +422,7 @@ function GroupAttendanceGrid({
 
               {/* Footer stats */}
               <tr className="bg-[#F5F3EF] font-semibold border-t-2 border-[#D8E1EA]">
-                <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">Total Presentes</td>
+                <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">Total Present</td>
                 <td className="sticky left-[200px] z-10 bg-[#F5F3EF] px-2 py-2 text-center text-[#1B2A6B]">&mdash;</td>
                 {dates.map(d => {
                   const s = dateStats.get(d);
@@ -434,7 +434,7 @@ function GroupAttendanceGrid({
                 })}
               </tr>
               <tr className="bg-[#F5F3EF] font-semibold">
-                <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">% Asistencia</td>
+                <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">% Attendance</td>
                 <td className="sticky left-[200px] z-10 bg-[#F5F3EF] px-2 py-2 text-center text-[#1B2A6B]">&mdash;</td>
                 {dates.map(d => {
                   const s = dateStats.get(d);
@@ -451,7 +451,7 @@ function GroupAttendanceGrid({
 
           {filteredMembers.length === 0 && (
             <div className="text-center py-12 text-sm text-[#5A6472]">
-              {search ? 'No se encontraron resultados.' : 'No hay participantes en este grupo.'}
+              {search ? 'No results found.' : 'No participants in this group.'}
             </div>
           )}
         </div>
@@ -649,7 +649,7 @@ function SOMAttendanceGrid() {
 
   const fmtDate = (iso: string) => {
     const d = new Date(iso + 'T12:00:00');
-    return { day: d.getDate(), weekday: d.toLocaleDateString('es-ES', { weekday: 'short' }).slice(0, 3) };
+    return { day: d.getDate(), weekday: d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3) };
   };
 
   const handleCellClick = (contactId: string, date: string, currentVal: boolean | 'late' | null | undefined) => {
@@ -673,13 +673,13 @@ function SOMAttendanceGrid() {
         <div className="w-16 h-16 rounded-full bg-[#E3F2FD] mx-auto mb-4 flex items-center justify-center">
           <Upload className="w-8 h-8 text-[#1B2A6B]" />
         </div>
-        <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Importar Asistencia SOM</h3>
+        <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Import SOM Attendance</h3>
         <p className="text-sm text-[#5A6472] max-w-md mx-auto mb-6">
-          Subi el archivo SOM ATTENDANCE.xlsx para ver la grilla completa de asistencia.
+          Upload the SOM ATTENDANCE.xlsx file to view the full attendance grid.
         </p>
         <button onClick={() => setShowImportModal(true)}
           className="flex items-center gap-2 px-6 py-3 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all mx-auto">
-          <Upload className="w-4 h-4" /> Importar Archivo
+          <Upload className="w-4 h-4" /> Import File
         </button>
       </div>
     );
@@ -692,21 +692,21 @@ function SOMAttendanceGrid() {
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6472]" />
-            <input type="text" placeholder="Buscar miembro..." value={search} onChange={(e) => setSearch(e.target.value)}
+            <input type="text" placeholder="Search member..." value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F] focus:ring-2 focus:ring-[#2A3D8F]/10" />
           </div>
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-[#5A6472]" />
             <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}
               className="px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm bg-white focus:outline-none focus:border-[#2A3D8F]">
-              <option value="all">Todos los meses</option>
+              <option value="all">All months</option>
               {attendance.months.map(m => (
                 <option key={m.name} value={m.name}>{m.name} ({m.dates.length})</option>
               ))}
             </select>
           </div>
           <div className="flex rounded-lg border border-[#D8E1EA] overflow-hidden">
-            {([['active', 'Activos'], ['dropped', 'Bajas'], ['all', 'Todos']] as const).map(([val, label]) => (
+            {([['active', 'Active'], ['dropped', 'Dropped'], ['all', 'All']] as const).map(([val, label]) => (
               <button key={val} onClick={() => setStatusFilter(val)}
                 className={`px-3 py-1.5 text-xs font-medium transition-all ${statusFilter === val ? 'bg-[#1B2A6B] text-white' : 'bg-white text-[#5A6472] hover:bg-[#f8f7f5]'}`}>
                 {label}{val === 'dropped' && droppedMembers.length > 0 && <span className="ml-1 text-[0.6rem] opacity-70">({droppedMembers.length})</span>}
@@ -718,40 +718,40 @@ function SOMAttendanceGrid() {
               <input type="checkbox" checked={showEvents} onChange={(e) => setShowEvents(e.target.checked)}
                 className="rounded border-[#D8E1EA] text-[#E8687D] focus:ring-[#E8687D]" />
               <Star className="w-3.5 h-3.5 text-[#E8687D]" />
-              <span className="text-[#5A6472] font-medium">Eventos</span>
+              <span className="text-[#5A6472] font-medium">Events</span>
             </label>
           )}
           <button onClick={() => setShowAddModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#2D8B4E] text-white text-xs font-medium hover:bg-[#24734A] transition-all ml-auto">
-            <UserPlus className="w-3.5 h-3.5" /> Agregar
+            <UserPlus className="w-3.5 h-3.5" /> Add
           </button>
         </div>
 
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-[#f0eeea] flex-wrap">
           <span className="text-xs text-[#5A6472]">
-            {filteredMembers.length} miembros
-            {droppedMembers.length > 0 && statusFilter === 'active' && <span className="text-[#C0392B]"> · {droppedMembers.length} bajas</span>}
+            {filteredMembers.length} members
+            {droppedMembers.length > 0 && statusFilter === 'active' && <span className="text-[#C0392B]"> · {droppedMembers.length} dropped</span>}
           </span>
           <span className="text-[0.6rem] text-[#999]">|</span>
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-            <span className="inline-block w-3.5 h-3.5 rounded bg-[#2D8B4E] text-white text-[0.5rem] font-bold leading-[14px] text-center">✓</span> Presente
+            <span className="inline-block w-3.5 h-3.5 rounded bg-[#2D8B4E] text-white text-[0.5rem] font-bold leading-[14px] text-center">✓</span> Present
           </span>
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-            <span className="inline-block w-3.5 h-3.5 rounded bg-[#E89B3A] text-white text-[0.5rem] font-bold leading-[14px] text-center">L</span> Tarde
+            <span className="inline-block w-3.5 h-3.5 rounded bg-[#E89B3A] text-white text-[0.5rem] font-bold leading-[14px] text-center">L</span> Late
           </span>
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-            <span className="inline-block w-3.5 h-3.5 rounded bg-[#C0392B] text-white text-[0.5rem] font-bold leading-[14px] text-center">✗</span> Ausente
+            <span className="inline-block w-3.5 h-3.5 rounded bg-[#C0392B] text-white text-[0.5rem] font-bold leading-[14px] text-center">✗</span> Absent
           </span>
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-            <span className="inline-block w-3.5 h-3.5 rounded bg-[#f0eeea] text-[#C5CDD8] text-[0.5rem] leading-[14px] text-center">&mdash;</span> Sin dato
+            <span className="inline-block w-3.5 h-3.5 rounded bg-[#f0eeea] text-[#C5CDD8] text-[0.5rem] leading-[14px] text-center">&mdash;</span> No data
           </span>
           {noSessionDates.size > 0 && (
             <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
-              <span className="inline-block w-3.5 h-3.5 rounded text-[0.5rem] leading-[14px] text-center" style={{ background: 'repeating-linear-gradient(45deg, #f0eeea, #f0eeea 2px, #e4e1da 2px, #e4e1da 4px)' }} /> Sin sesion
+              <span className="inline-block w-3.5 h-3.5 rounded text-[0.5rem] leading-[14px] text-center" style={{ background: 'repeating-linear-gradient(45deg, #f0eeea, #f0eeea 2px, #e4e1da 2px, #e4e1da 4px)' }} /> No session
             </span>
           )}
           <span className="text-[0.6rem] text-[#999]">|</span>
-          <span className="text-[0.65rem] text-[#5A6472]">Click encabezado mes para colapsar</span>
+          <span className="text-[0.65rem] text-[#5A6472]">Click month header to collapse</span>
         </div>
       </div>
 
@@ -766,13 +766,13 @@ function SOMAttendanceGrid() {
                 <th className="sticky left-0 z-40 bg-[#1B2A6B] px-2 py-2 text-left text-white font-semibold min-w-[200px]" rowSpan={2}>
                   <div className="flex items-center gap-1">
                     <button onClick={() => toggleSort('lastName')} className="hover:text-[#C5E3F6] transition-colors flex items-center gap-0.5"
-                      title="Ordenar por apellido">
-                      Apellido{sortField === 'lastName' && <ArrowUpDown className="w-3 h-3" />}
+                      title="Sort by last name">
+                      Last Name{sortField === 'lastName' && <ArrowUpDown className="w-3 h-3" />}
                     </button>
                     <span className="text-white/30">/</span>
                     <button onClick={() => toggleSort('firstName')} className="hover:text-[#C5E3F6] transition-colors flex items-center gap-0.5"
-                      title="Ordenar por nombre">
-                      Nombre{sortField === 'firstName' && <ArrowUpDown className="w-3 h-3" />}
+                      title="Sort by first name">
+                      First Name{sortField === 'firstName' && <ArrowUpDown className="w-3 h-3" />}
                     </button>
                   </div>
                 </th>
@@ -782,7 +782,7 @@ function SOMAttendanceGrid() {
                     colSpan={g.count}
                     className={`px-1 py-1.5 text-center font-semibold text-[0.7rem] uppercase tracking-wider border-l border-white/10 cursor-pointer select-none transition-colors ${g.collapsed ? 'bg-[#5A6472] hover:bg-[#6b7785]' : 'text-[#C5E3F6] hover:bg-[#2A3D8F]'}`}
                     onClick={() => toggleMonth(g.name)}
-                    title={g.collapsed ? `Expandir ${g.name} (${g.totalInMonth} columnas)` : `Colapsar ${g.name}`}>
+                    title={g.collapsed ? `Expand ${g.name} (${g.totalInMonth} columns)` : `Collapse ${g.name}`}>
                     <div className="flex items-center justify-center gap-1">
                       {g.collapsed
                         ? <ChevronRight className="w-3 h-3 text-white/60" />
@@ -807,7 +807,7 @@ function SOMAttendanceGrid() {
                   return (
                     <th key={`${col.type}-${col.date}-${col.event?.id || ''}`}
                       className={`px-0.5 py-1.5 text-center min-w-[32px] ${isFirstOfMonth ? 'border-l border-white/10' : ''} ${isEvent ? 'bg-[#E8687D]' : isNoSession ? 'bg-[#5A6472]' : 'bg-[#233580]'}`}
-                      title={isEvent ? col.event!.name : isNoSession ? 'No hubo sesion' : undefined}>
+                      title={isEvent ? col.event!.name : isNoSession ? 'No session' : undefined}>
                       {isEvent ? (
                         <><div className="text-[0.55rem] text-white/70">★</div><div className="text-[0.65rem] text-white font-semibold">{day}</div></>
                       ) : (
@@ -839,7 +839,7 @@ function SOMAttendanceGrid() {
                         <span className={`font-medium text-[#1A1A2E] whitespace-nowrap ${isDropped ? 'line-through' : ''}`}>
                           {member.lastName}, {member.firstName}
                         </span>
-                        {isDropped && <span className="text-[0.55rem] text-[#C0392B] font-semibold ml-1">BAJA</span>}
+                        {isDropped && <span className="text-[0.55rem] text-[#C0392B] font-semibold ml-1">DROPPED</span>}
                       </div>
                     </td>
                     <td className={`sticky left-[200px] z-10 px-2 py-2 text-center font-bold border-b border-[#f0eeea] ${rowBg}`}>
@@ -861,7 +861,7 @@ function SOMAttendanceGrid() {
                         const attended = col.event!.attendees.includes(member.contactId);
                         return (
                           <td key={`evt-${col.event!.id}`} className={`px-0.5 py-2 text-center border-b border-[#f0eeea] bg-[#FFF5F6] ${isFirstOfMonth ? 'border-l border-[#D8E1EA]' : ''}`}
-                            title={`${col.event!.name}: ${attended ? 'Asistio' : 'No asistio'}`}>
+                            title={`${col.event!.name}: ${attended ? 'Attended' : 'Did not attend'}`}>
                             {attended
                               ? <span className="inline-block w-5 h-5 rounded bg-[#E8687D] text-white text-[0.6rem] font-bold leading-5">★</span>
                               : <span className="inline-block w-5 h-5 rounded bg-[#f0eeea] text-[#D8CCC4] text-[0.6rem] leading-5">&mdash;</span>}
@@ -870,7 +870,7 @@ function SOMAttendanceGrid() {
                       }
                       if (isNoSession) {
                         return (
-                          <td key={col.date} className={`px-0.5 py-2 text-center border-b border-[#f0eeea] ${isFirstOfMonth ? 'border-l border-[#D8E1EA]' : ''}`} title="No hubo sesion">
+                          <td key={col.date} className={`px-0.5 py-2 text-center border-b border-[#f0eeea] ${isFirstOfMonth ? 'border-l border-[#D8E1EA]' : ''}`} title="No session">
                             <span className="inline-block w-5 h-5 rounded text-[0.5rem] text-[#b8b0a4] leading-5"
                               style={{ background: 'repeating-linear-gradient(45deg, #f0eeea, #f0eeea 2px, #e4e1da 2px, #e4e1da 4px)' }} />
                           </td>
@@ -881,7 +881,7 @@ function SOMAttendanceGrid() {
                         <td key={col.date} className={`px-0.5 py-2 text-center border-b border-[#f0eeea] ${isFirstOfMonth ? 'border-l border-[#D8E1EA]' : ''}`}>
                           <button onClick={() => handleCellClick(member.contactId, col.date, val)}
                             className="inline-flex items-center justify-center w-5 h-5 rounded text-[0.6rem] font-bold leading-5 transition-all hover:scale-110 hover:shadow-sm cursor-pointer"
-                            title={`Click: ${val === true ? '\u2192 Tarde' : val === 'late' ? '\u2192 Ausente' : val === false ? '\u2192 Sin dato' : '\u2192 Presente'}`}>
+                            title={`Click: ${val === true ? '\u2192 Late' : val === 'late' ? '\u2192 Absent' : val === false ? '\u2192 No data' : '\u2192 Present'}`}>
                             {val === true
                               ? <span className="w-5 h-5 rounded bg-[#2D8B4E] text-white leading-5 text-center">✓</span>
                               : val === 'late'
@@ -899,7 +899,7 @@ function SOMAttendanceGrid() {
 
               {/* Footer stats */}
               <tr className="bg-[#F5F3EF] font-semibold border-t-2 border-[#D8E1EA]">
-                <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">Total Presentes</td>
+                <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">Total Present</td>
                 <td className="sticky left-[200px] z-10 bg-[#F5F3EF] px-2 py-2 text-center text-[#1B2A6B]">&mdash;</td>
                 {renderColumns.map((col, di) => {
                   if (col.type === 'collapsed') return <td key={`collapsed-foot-${col.month}`} className="bg-[#eae7e1] px-0" />;
@@ -916,7 +916,7 @@ function SOMAttendanceGrid() {
                 })}
               </tr>
               <tr className="bg-[#F5F3EF] font-semibold">
-                <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">% Asistencia</td>
+                <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">% Attendance</td>
                 <td className="sticky left-[200px] z-10 bg-[#F5F3EF] px-2 py-2 text-center text-[#1B2A6B]">&mdash;</td>
                 {renderColumns.map((col, di) => {
                   if (col.type === 'collapsed') return <td key={`collapsed-pct-${col.month}`} className="bg-[#eae7e1] px-0" />;
@@ -948,12 +948,12 @@ function SOMAttendanceGrid() {
             {getMemberStatus(menuInfo.contactId) === 'dropped' ? (
               <button onClick={() => { reactivateMember(menuInfo.contactId); setMenuInfo(null); }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#2D8B4E] hover:bg-[#f4f2ee] transition-colors text-left">
-                <RotateCcw className="w-3.5 h-3.5" /> Reactivar miembro
+                <RotateCcw className="w-3.5 h-3.5" /> Reactivate member
               </button>
             ) : (
               <button onClick={() => { setDropConfirm(menuInfo.contactId); setMenuInfo(null); }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#C0392B] hover:bg-[#f4f2ee] transition-colors text-left">
-                <UserMinus className="w-3.5 h-3.5" /> Dar de baja
+                <UserMinus className="w-3.5 h-3.5" /> Drop member
               </button>
             )}
           </div>
@@ -988,16 +988,16 @@ function DropConfirmModal({ memberName, onConfirm, onCancel }: {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center"><UserMinus className="w-5 h-5 text-[#C0392B]" /></div>
-          <div><h3 className="font-serif font-bold text-[#1B2A6B]">Dar de baja</h3><p className="text-sm text-[#5A6472]">{memberName}</p></div>
+          <div><h3 className="font-serif font-bold text-[#1B2A6B]">Drop member</h3><p className="text-sm text-[#5A6472]">{memberName}</p></div>
         </div>
         <div className="mb-4">
-          <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Fecha de baja</label>
+          <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Drop date</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
         </div>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-2 rounded-lg border border-[#D8E1EA] text-sm font-medium hover:bg-[#f8f7f5] transition-all">Cancelar</button>
-          <button onClick={() => onConfirm(date)} className="flex-1 py-2 rounded-lg bg-[#C0392B] text-white text-sm font-medium hover:bg-[#A93226] transition-all">Confirmar Baja</button>
+          <button onClick={onCancel} className="flex-1 py-2 rounded-lg border border-[#D8E1EA] text-sm font-medium hover:bg-[#f8f7f5] transition-all">Cancel</button>
+          <button onClick={() => onConfirm(date)} className="flex-1 py-2 rounded-lg bg-[#C0392B] text-white text-sm font-medium hover:bg-[#A93226] transition-all">Confirm Drop</button>
         </div>
       </div>
     </div>
@@ -1016,30 +1016,30 @@ function AddMemberModal({ onSave, onClose }: {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-[#E3F2FD] flex items-center justify-center"><UserPlus className="w-5 h-5 text-[#2D8B4E]" /></div>
-          <div><h3 className="font-serif font-bold text-[#1B2A6B]">Agregar Miembro</h3><p className="text-xs text-[#5A6472]">Se suma a la lista de SOM</p></div>
+          <div><h3 className="font-serif font-bold text-[#1B2A6B]">Add Member</h3><p className="text-xs text-[#5A6472]">Will be added to the SOM list</p></div>
         </div>
         <div className="space-y-3 mb-4">
           <div>
-            <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Nombre</label>
-            <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Nombre..."
+            <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">First Name</label>
+            <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First name..."
               className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Apellido</label>
-            <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Apellido..."
+            <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Last Name</label>
+            <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last name..."
               className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Fecha de ingreso</label>
+            <label className="block text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-1">Join date</label>
             <input type="date" value={joinDate} onChange={e => setJoinDate(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
           </div>
         </div>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-[#D8E1EA] text-sm font-medium hover:bg-[#f8f7f5] transition-all">Cancelar</button>
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-[#D8E1EA] text-sm font-medium hover:bg-[#f8f7f5] transition-all">Cancel</button>
           <button onClick={() => { if (firstName.trim() && lastName.trim()) onSave(firstName, lastName, joinDate); }}
             disabled={!firstName.trim() || !lastName.trim()}
-            className="flex-1 py-2 rounded-lg bg-[#2D8B4E] text-white text-sm font-medium hover:bg-[#24734A] transition-all disabled:opacity-40">Agregar</button>
+            className="flex-1 py-2 rounded-lg bg-[#2D8B4E] text-white text-sm font-medium hover:bg-[#24734A] transition-all disabled:opacity-40">Add</button>
         </div>
       </div>
     </div>

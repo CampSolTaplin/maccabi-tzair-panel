@@ -122,7 +122,7 @@ export function parseRoster(buffer: ArrayBuffer, fileName: string): RosterData {
   }
 
   if (chanichim.length === 0) {
-    throw new Error('No se encontraron registros de participantes en el archivo.');
+    throw new Error('No participant records found in the file.');
   }
 
   // Sort by program order, then by full name

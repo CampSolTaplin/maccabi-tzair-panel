@@ -41,18 +41,18 @@ export default function HoursPage() {
   if (!isImported || !attendance) {
     return (
       <>
-        <Topbar title="Horas Comunitarias" subtitle="Community Service Hours — School of Madrichim" />
+        <Topbar title="Community Hours" subtitle="Community Service Hours — School of Madrichim" />
         <div className="p-7">
           <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-12 text-center">
             <div className="w-16 h-16 rounded-full bg-[#E3F2FD] mx-auto mb-4 flex items-center justify-center">
               <Upload className="w-8 h-8 text-[#1B2A6B]" />
             </div>
-            <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Importar Asistencia</h3>
+            <h3 className="text-lg font-serif font-bold text-[#1B2A6B] mb-2">Import Attendance</h3>
             <p className="text-sm text-[#5A6472] max-w-md mx-auto mb-6">
-              Las horas comunitarias se calculan automaticamente desde la asistencia. Importa el archivo primero.
+              Community hours are calculated automatically from attendance. Import the file first.
             </p>
             <button onClick={() => setShowImportModal(true)} className="flex items-center gap-2 px-6 py-3 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all mx-auto">
-              <Upload className="w-4 h-4" /> Importar Asistencia
+              <Upload className="w-4 h-4" /> Import Attendance
             </button>
           </div>
         </div>
@@ -62,27 +62,27 @@ export default function HoursPage() {
 
   return (
     <>
-      <Topbar title="Horas Comunitarias" subtitle="Community Service Hours — School of Madrichim" />
+      <Topbar title="Community Hours" subtitle="Community Service Hours — School of Madrichim" />
       <div className="p-5">
         {/* KPI Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
           <div className="bg-white rounded-xl border border-[#D8E1EA] p-4 text-center">
             <div className="text-2xl font-serif font-bold text-[#1B2A6B]">{allHours.length}</div>
-            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Miembros</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Members</div>
           </div>
           <div className="bg-white rounded-xl border border-[#D8E1EA] p-4 text-center">
             <div className="text-2xl font-serif font-bold text-[#2D8B4E]">{avgHours}</div>
-            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Promedio Horas</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Average Hours</div>
           </div>
           <div className="bg-white rounded-xl border border-[#D8E1EA] p-4 text-center">
             <Link href="/events" className="hover:opacity-80 transition-opacity">
               <div className="text-2xl font-serif font-bold text-[#E89B3A]">{events.length}</div>
-              <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Eventos Especiales</div>
+              <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Special Events</div>
             </Link>
           </div>
           <div className="bg-white rounded-xl border border-[#D8E1EA] p-4 text-center">
             <div className="text-2xl font-serif font-bold text-[#E8687D]">{totalRegular + totalEvent}</div>
-            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Total Horas</div>
+            <div className="text-[0.68rem] uppercase tracking-wider text-[#5A6472] font-semibold">Total Hours</div>
           </div>
         </div>
 
@@ -91,11 +91,11 @@ export default function HoursPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 px-3 py-2 bg-[#FAFAF8] rounded-lg">
               <Users className="w-4 h-4 text-[#1B2A6B]" />
-              <span className="text-sm font-medium text-[#1B2A6B]">Miembros SOM</span>
+              <span className="text-sm font-medium text-[#1B2A6B]">SOM Members</span>
             </div>
             <div className="flex-1 min-w-[200px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6472]" />
-              <input type="text" placeholder="Buscar miembro..." value={search} onChange={(e) => setSearch(e.target.value)}
+              <input type="text" placeholder="Search member..." value={search} onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 rounded-lg border border-[#D8E1EA] text-sm focus:outline-none focus:border-[#2A3D8F]" />
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function HoursPage() {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                {['#', 'Miembro', 'Sesiones', 'Horas Regulares', 'Horas Eventos', 'Total Horas', 'Acciones'].map(h => (
+                {['#', 'Member', 'Sessions', 'Regular Hours', 'Event Hours', 'Total Hours', 'Actions'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs uppercase tracking-wider text-[#5A6472] font-semibold bg-[#FAFAF8] border-b border-[#D8E1EA] whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -125,7 +125,7 @@ export default function HoursPage() {
                   <td className="px-4 py-2.5 border-b border-[#f4f2ee]">
                     <button onClick={() => setLetterMember(m)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all">
-                      <FileText className="w-3.5 h-3.5" /> Carta
+                      <FileText className="w-3.5 h-3.5" /> Letter
                     </button>
                   </td>
                 </tr>
@@ -337,22 +337,22 @@ function LetterModal({ member, events, onClose }: { member: MemberHours; events:
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4" onClick={e => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-[#D8E1EA]">
-          <h2 className="font-serif font-bold text-lg text-[#1B2A6B]">Generar Carta</h2>
+          <h2 className="font-serif font-bold text-lg text-[#1B2A6B]">Generate Letter</h2>
         </div>
         <div className="px-6 py-5">
           <div className="bg-[#FAFAF8] rounded-lg p-4 mb-4">
             <h3 className="font-semibold text-[#1B2A6B] mb-2">{member.fullName}</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><span className="text-[#5A6472]">Sesiones regulares:</span> <strong>{member.regularSessions}</strong></div>
-              <div><span className="text-[#5A6472]">Horas regulares:</span> <strong>{member.regularHours}h</strong></div>
-              <div><span className="text-[#5A6472]">Horas eventos:</span> <strong>{member.eventHours}h</strong></div>
+              <div><span className="text-[#5A6472]">Regular sessions:</span> <strong>{member.regularSessions}</strong></div>
+              <div><span className="text-[#5A6472]">Regular hours:</span> <strong>{member.regularHours}h</strong></div>
+              <div><span className="text-[#5A6472]">Event hours:</span> <strong>{member.eventHours}h</strong></div>
               <div><span className="text-[#5A6472]">Total:</span> <strong className="text-[#1B2A6B] text-base">{member.totalHours}h</strong></div>
             </div>
           </div>
 
           {member.eventBreakdown.length > 0 && (
             <div className="mb-4">
-              <p className="text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-2">Desglose Eventos</p>
+              <p className="text-xs font-semibold text-[#5A6472] uppercase tracking-wider mb-2">Event Breakdown</p>
               {member.eventBreakdown.map((e, i) => (
                 <div key={i} className="flex justify-between text-sm py-1 border-b border-[#f0eeea] last:border-b-0">
                   <span>{e.eventName}</span>
@@ -364,10 +364,10 @@ function LetterModal({ member, events, onClose }: { member: MemberHours; events:
 
           <button onClick={handlePrint}
             className="w-full py-2.5 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all flex items-center justify-center gap-2">
-            <FileText className="w-4 h-4" /> Generar e Imprimir Carta
+            <FileText className="w-4 h-4" /> Generate & Print Letter
           </button>
           <button onClick={onClose} className="w-full py-2 rounded-lg text-sm text-[#5A6472] hover:bg-[#f4f2ee] transition-all mt-2">
-            Cerrar
+            Close
           </button>
         </div>
       </div>

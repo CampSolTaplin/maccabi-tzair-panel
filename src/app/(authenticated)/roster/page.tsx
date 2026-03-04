@@ -19,23 +19,23 @@ interface ColumnDef {
 }
 
 const ROSTER_COLUMNS: ColumnDef[] = [
-  { key: 'fullName', label: 'Nombre Completo', defaultVisible: true, minWidth: '180px' },
-  { key: 'gender', label: 'Genero', defaultVisible: true, minWidth: '80px' },
-  { key: 'age', label: 'Edad', defaultVisible: true, minWidth: '60px' },
-  { key: 'grade', label: 'Grado', defaultVisible: true, minWidth: '100px' },
-  { key: 'school', label: 'Escuela', defaultVisible: true, minWidth: '140px' },
-  { key: 'gradeLevel', label: 'Nivel/Grupo', defaultVisible: true, minWidth: '160px' },
-  { key: 'accountName', label: 'Cuenta Familiar', defaultVisible: false, minWidth: '180px' },
-  { key: 'emergencyContactName', label: 'Contacto Emergencia', defaultVisible: false, minWidth: '170px' },
-  { key: 'emergencyPhone', label: 'Tel. Emergencia', defaultVisible: false, minWidth: '140px' },
-  { key: 'allergies', label: 'Alergias', defaultVisible: false, minWidth: '120px' },
-  { key: 'jewishIdentification', label: 'Identificacion Judia', defaultVisible: false, minWidth: '150px' },
-  { key: 'communityService', label: 'Servicio Comunitario', defaultVisible: false, minWidth: '150px' },
+  { key: 'fullName', label: 'Full Name', defaultVisible: true, minWidth: '180px' },
+  { key: 'gender', label: 'Gender', defaultVisible: true, minWidth: '80px' },
+  { key: 'age', label: 'Age', defaultVisible: true, minWidth: '60px' },
+  { key: 'grade', label: 'Grade', defaultVisible: true, minWidth: '100px' },
+  { key: 'school', label: 'School', defaultVisible: true, minWidth: '140px' },
+  { key: 'gradeLevel', label: 'Level/Group', defaultVisible: true, minWidth: '160px' },
+  { key: 'accountName', label: 'Family Account', defaultVisible: false, minWidth: '180px' },
+  { key: 'emergencyContactName', label: 'Emergency Contact', defaultVisible: false, minWidth: '170px' },
+  { key: 'emergencyPhone', label: 'Emergency Phone', defaultVisible: false, minWidth: '140px' },
+  { key: 'allergies', label: 'Allergies', defaultVisible: false, minWidth: '120px' },
+  { key: 'jewishIdentification', label: 'Jewish Identification', defaultVisible: false, minWidth: '150px' },
+  { key: 'communityService', label: 'Community Service', defaultVisible: false, minWidth: '150px' },
   { key: 'keepKosher', label: 'Kosher', defaultVisible: false, minWidth: '80px' },
-  { key: 'primaryEmail', label: 'Email Principal', defaultVisible: false, minWidth: '200px' },
-  { key: 'primaryPhone', label: 'Telefono', defaultVisible: false, minWidth: '130px' },
-  { key: 'contactPhone', label: 'Tel. Contacto', defaultVisible: false, minWidth: '130px' },
-  { key: 'allEmails', label: 'Todos los Emails', defaultVisible: false, minWidth: '250px' },
+  { key: 'primaryEmail', label: 'Primary Email', defaultVisible: false, minWidth: '200px' },
+  { key: 'primaryPhone', label: 'Phone', defaultVisible: false, minWidth: '130px' },
+  { key: 'contactPhone', label: 'Contact Phone', defaultVisible: false, minWidth: '130px' },
+  { key: 'allEmails', label: 'All Emails', defaultVisible: false, minWidth: '250px' },
   { key: 'courseOptionId', label: 'ID Enrollment', defaultVisible: false, minWidth: '160px' },
   { key: 'contactId', label: 'Contact ID', defaultVisible: false, minWidth: '160px' },
   { key: 'fullCourseOption', label: 'Full Course Option', defaultVisible: false, minWidth: '300px' },
@@ -52,7 +52,7 @@ interface AreaDef {
 }
 
 const AREAS: AreaDef[] = [
-  { key: 'all', label: 'Todos', programs: ['Katan', 'Noar', 'Pre-SOM', 'SOM', 'Trips', 'Machanot'], color: 'text-[#1B2A6B]', activeBg: 'bg-[#1B2A6B] text-white' },
+  { key: 'all', label: 'All', programs: ['Katan', 'Noar', 'Pre-SOM', 'SOM', 'Trips', 'Machanot'], color: 'text-[#1B2A6B]', activeBg: 'bg-[#1B2A6B] text-white' },
   { key: 'katan', label: 'Katan (K-5)', programs: ['Katan'], color: 'text-blue-700', activeBg: 'bg-blue-600 text-white' },
   { key: 'noar', label: 'Noar (6-8)', programs: ['Noar'], color: 'text-purple-700', activeBg: 'bg-purple-600 text-white' },
   { key: 'leadership', label: 'Leadership', programs: ['Pre-SOM', 'SOM'], color: 'text-amber-700', activeBg: 'bg-amber-600 text-white' },
@@ -113,7 +113,7 @@ export default function RosterPage() {
     );
     const groups = new Map<string, number>();
     for (const m of members) {
-      const gl = m.gradeLevel || 'Sin clasificar';
+      const gl = m.gradeLevel || 'Unclassified';
       groups.set(gl, (groups.get(gl) || 0) + 1);
     }
     return Array.from(groups.entries())
@@ -146,7 +146,7 @@ export default function RosterPage() {
       if (currentArea.programs.includes(selectedSubGroup as Program)) {
         list = list.filter(c => c.program === selectedSubGroup);
       } else {
-        list = list.filter(c => (c.gradeLevel || 'Sin clasificar') === selectedSubGroup);
+        list = list.filter(c => (c.gradeLevel || 'Unclassified') === selectedSubGroup);
       }
     }
 
@@ -202,7 +202,7 @@ export default function RosterPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const groupLabel = selectedArea === 'all' ? 'todos' : selectedSubGroup || selectedArea;
+    const groupLabel = selectedArea === 'all' ? 'all' : selectedSubGroup || selectedArea;
     a.download = `roster-${groupLabel}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
@@ -211,7 +211,7 @@ export default function RosterPage() {
   if (loading) {
     return (
       <>
-        <Topbar title="Rosters" subtitle="Registro de participantes" />
+        <Topbar title="Rosters" subtitle="Participant registry" />
         <div className="flex justify-center py-20">
           <div className="w-8 h-8 border-3 border-[#1B2A6B]/20 border-t-[#1B2A6B] rounded-full animate-spin" />
         </div>
@@ -221,22 +221,22 @@ export default function RosterPage() {
 
   return (
     <>
-      <Topbar title="Rosters" subtitle="Registro de participantes — Maccabi Tzair Miami" />
+      <Topbar title="Rosters" subtitle="Participant registry — Maccabi Tzair Miami" />
       <div className="p-7">
         {/* Empty state */}
         {!rosterData && (
           <div className="max-w-lg mx-auto mt-12">
             <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-10 text-center">
               <FileSpreadsheet className="w-14 h-14 text-[#D8E1EA] mx-auto mb-4" />
-              <h3 className="text-xl font-serif font-bold text-[#1B2A6B] mb-2">Sin roster importado</h3>
+              <h3 className="text-xl font-serif font-bold text-[#1B2A6B] mb-2">No roster imported</h3>
               <p className="text-sm text-[#5A6472] mb-6">
-                Importa el reporte de Salesforce para ver los participantes de todos los programas.
+                Import the Salesforce report to view participants from all programs.
               </p>
               <button
                 onClick={() => setShowImport(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all"
               >
-                <Upload className="w-4 h-4" /> Importar Roster
+                <Upload className="w-4 h-4" /> Import Roster
               </button>
             </div>
           </div>
@@ -250,10 +250,10 @@ export default function RosterPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3">
                   <h3 className="text-base font-semibold text-[#1B2A6B] flex items-center gap-2">
-                    <Users className="w-4 h-4 text-[#E8687D]" /> Participantes
+                    <Users className="w-4 h-4 text-[#E8687D]" /> Participants
                   </h3>
                   <span className="text-xs text-[#5A6472] bg-[#F2F0EC] px-2 py-0.5 rounded-full">
-                    {filteredData.length} de {rosterData.chanichim.length}
+                    {filteredData.length} of {rosterData.chanichim.length}
                   </span>
                 </div>
 
@@ -264,14 +264,14 @@ export default function RosterPage() {
                       onClick={() => setShowColMenu(!showColMenu)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D8E1EA] text-xs font-medium hover:bg-[#f8f7f5] transition-all"
                     >
-                      <Columns3 className="w-3.5 h-3.5" /> Columnas
+                      <Columns3 className="w-3.5 h-3.5" /> Columns
                       <ChevronDown className="w-3 h-3" />
                     </button>
                     {showColMenu && (
                       <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-xl border border-[#D8E1EA] py-2 z-50 max-h-80 overflow-y-auto">
                         <div className="px-3 py-1.5 border-b border-[#D8E1EA] mb-1">
                           <span className="text-[0.65rem] font-semibold text-[#5A6472] uppercase tracking-wider">
-                            Columnas visibles ({visibleCols.size})
+                            Visible columns ({visibleCols.size})
                           </span>
                         </div>
                         {ROSTER_COLUMNS.map(col => (
@@ -306,7 +306,7 @@ export default function RosterPage() {
                     onClick={() => setShowImport(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1B2A6B] text-white text-xs font-medium hover:bg-[#2A3D8F] transition-all"
                   >
-                    <Upload className="w-3.5 h-3.5" /> Importar
+                    <Upload className="w-3.5 h-3.5" /> Import
                   </button>
                 </div>
               </div>
@@ -348,7 +348,7 @@ export default function RosterPage() {
                         : 'bg-[#F2F0EC] text-[#5A6472] hover:bg-[#E8E5DF]'
                     }`}
                   >
-                    Todos ({areaCounts[selectedArea] || 0})
+                    All ({areaCounts[selectedArea] || 0})
                   </button>
 
                   {/* Program sub-tabs for multi-program areas (Leadership, Special Events) */}
@@ -393,7 +393,7 @@ export default function RosterPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5A6472]" />
                 <input
                   type="text"
-                  placeholder="Buscar por nombre, escuela, grado, email..."
+                  placeholder="Search by name, school, grade, email..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full pl-9 pr-8 py-2 rounded-lg border border-[#D8E1EA] text-sm bg-white focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
@@ -416,7 +416,7 @@ export default function RosterPage() {
                     </th>
                     {selectedArea === 'all' && (
                       <th className="text-left py-2.5 px-3 text-[0.65rem] font-semibold uppercase tracking-wider text-[#5A6472]" style={{ minWidth: '90px' }}>
-                        Programa
+                        Program
                       </th>
                     )}
                     {activeCols.map(col => (
@@ -458,7 +458,7 @@ export default function RosterPage() {
 
               {filteredData.length === 0 && (
                 <div className="text-center py-12 text-sm text-[#5A6472]">
-                  {search ? 'No se encontraron resultados para la busqueda.' : 'No hay participantes en este grupo.'}
+                  {search ? 'No results found for the search.' : 'No participants in this group.'}
                 </div>
               )}
             </div>
@@ -467,11 +467,11 @@ export default function RosterPage() {
             {rosterData && (
               <div className="px-5 py-3 border-t border-[#D8E1EA] bg-[#FAFAF8] text-xs text-[#5A6472] flex items-center justify-between">
                 <span>
-                  Ultima importacion: {new Date(rosterData.importedAt).toLocaleString('es')}
+                  Last import: {new Date(rosterData.importedAt).toLocaleString('en-US')}
                   {' · '}
                   {rosterData.sourceFileName}
                 </span>
-                <span>{filteredData.length} participantes</span>
+                <span>{filteredData.length} participants</span>
               </div>
             )}
           </div>
