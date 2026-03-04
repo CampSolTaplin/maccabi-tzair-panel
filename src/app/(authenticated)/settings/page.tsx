@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import { Database, Bell, Palette, Upload, Edit, CheckCircle2, Trash2, CalendarDays, Plus, X, Star, Zap, Check, Tag } from 'lucide-react';
+import { Database, Bell, Palette, Upload, Edit, CheckCircle2, Trash2, CalendarDays, Plus, X, Star, Zap, Check, Tag, Ban } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 
 // ── Group definitions (same as events page) ──
@@ -72,11 +72,13 @@ export default function SettingsPage() {
     setShowImportModal, isImported, attendance, clearImport,
     enabledDates, enabledDateGroups, toggleEnabledDate, updateEnabledDateGroups,
     events,
+    noSessionDates, toggleNoSessionDate,
   } = useData();
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [newDateGroups, setNewDateGroups] = useState<Set<string>>(new Set());
   const [editingDateGroups, setEditingDateGroups] = useState<string | null>(null);
   const [editGroups, setEditGroups] = useState<Set<string>>(new Set());
+  const [newNoSessionDate, setNewNoSessionDate] = useState(new Date().toISOString().split('T')[0]);
 
   const sortedEnabledDates = [...enabledDates].sort((a, b) => b.localeCompare(a));
 
@@ -407,6 +409,63 @@ export default function SettingsPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* No-Session Dates */}
+        <div className="bg-white rounded-xl shadow-sm border border-[#D8E1EA] p-6 mb-5">
+          <h3 className="text-base font-semibold text-[#1B2A6B] mb-4 pb-3 border-b border-[#D8E1EA] flex items-center gap-2">
+            <Ban className="w-4 h-4 text-[#C0392B]" /> No-Session Dates
+          </h3>
+          <p className="text-xs text-[#5A6472] mb-4">
+            Mark dates when there was no session (holidays, cancellations, etc.).
+            These dates will appear grayed out in the attendance grid and won&apos;t count toward attendance percentages.
+          </p>
+
+          {/* Add no-session date */}
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              type="date"
+              value={newNoSessionDate}
+              onChange={e => setNewNoSessionDate(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm bg-white focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
+            />
+            <button
+              onClick={() => {
+                if (newNoSessionDate && !noSessionDates.includes(newNoSessionDate)) {
+                  toggleNoSessionDate(newNoSessionDate);
+                }
+              }}
+              disabled={!newNoSessionDate || noSessionDates.includes(newNoSessionDate)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#C0392B] text-white text-sm font-medium hover:bg-[#A93226] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-4 h-4" /> Add No-Session
+            </button>
+          </div>
+
+          {/* No-session dates list */}
+          {noSessionDates.length === 0 ? (
+            <div className="text-center py-4 text-sm text-[#5A6472] bg-[#f8f7f5] rounded-lg">
+              No no-session dates added.
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {[...noSessionDates].sort((a, b) => b.localeCompare(a)).map(date => (
+                <div key={date} className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-[#D8E1EA] bg-[#f8f7f5]">
+                  <div className="flex items-center gap-2">
+                    <Ban className="w-4 h-4 text-[#C0392B] flex-shrink-0" />
+                    <span className="text-sm font-medium text-[#1A1A2E]">{formatDate(date)}</span>
+                  </div>
+                  <button
+                    onClick={() => toggleNoSessionDate(date)}
+                    className="p-1.5 rounded-lg text-[#C0392B] hover:bg-red-50 transition-all"
+                    title="Remove no-session date"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

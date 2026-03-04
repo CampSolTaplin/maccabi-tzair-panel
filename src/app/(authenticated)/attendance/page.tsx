@@ -74,6 +74,7 @@ export default function AttendancePage() {
     activeMembers, droppedMembers,
     rosterData, groupAttendance, updateGroupAttendance,
     getEnabledDatesForGroup,
+    noSessionDates,
   } = useData();
 
   const [selectedGroup, setSelectedGroup] = useState('som-legacy');
@@ -171,6 +172,7 @@ export default function AttendancePage() {
             updateGroupAttendance={updateGroupAttendance}
             enabledDates={getEnabledDatesForGroup(selectedGroup)}
             events={events}
+            noSessionDates={noSessionDates}
           />
         )}
       </div>
@@ -190,6 +192,7 @@ function GroupAttendanceGrid({
   updateGroupAttendance,
   enabledDates,
   events,
+  noSessionDates,
 }: {
   groupKey: string;
   rosterData: ReturnType<typeof useData>['rosterData'];
@@ -197,6 +200,7 @@ function GroupAttendanceGrid({
   updateGroupAttendance: ReturnType<typeof useData>['updateGroupAttendance'];
   enabledDates: string[];
   events: CommunityEvent[];
+  noSessionDates: string[];
 }) {
   const [search, setSearch] = useState('');
 
@@ -226,8 +230,14 @@ function GroupAttendanceGrid({
     );
   }, [members, search]);
 
-  // Sorted dates (ascending)
-  const dates = useMemo(() => [...enabledDates].sort(), [enabledDates]);
+  // Sorted dates (ascending) — include no-session dates in the grid
+  const dates = useMemo(() => {
+    const all = new Set([...enabledDates, ...noSessionDates]);
+    return [...all].sort();
+  }, [enabledDates, noSessionDates]);
+
+  // Quick lookup for no-session dates
+  const noSessionSet = useMemo(() => new Set(noSessionDates), [noSessionDates]);
 
   // Map event dates to event names (only events that include this group)
   const eventByDate = useMemo(() => {
@@ -236,6 +246,11 @@ function GroupAttendanceGrid({
     );
     return new Map(relevant.map(e => [e.date, e.name]));
   }, [events, groupKey]);
+
+  // Regular session dates = dates that are NOT events and NOT no-session
+  const regularDates = useMemo(() => {
+    return dates.filter(d => !eventByDate.has(d) && !noSessionSet.has(d));
+  }, [dates, eventByDate, noSessionSet]);
 
   const getVal = (contactId: string, date: string): AttendanceValue => {
     return groupAttendance[groupKey]?.[contactId]?.[date] ?? null;
@@ -251,12 +266,12 @@ function GroupAttendanceGrid({
     updateGroupAttendance(groupKey, contactId, date, next);
   };
 
-  // Per-member stats
+  // Per-member stats (% only counts regular session dates, excludes events + no-session)
   const memberStats = useMemo(() => {
     const stats = new Map<string, { present: number; late: number; absent: number; total: number; rate: number }>();
     for (const m of filteredMembers) {
       let present = 0, late = 0, absent = 0;
-      for (const d of dates) {
+      for (const d of regularDates) {
         const v = getVal(m.contactId, d);
         if (v === true) present++;
         else if (v === 'late') late++;
@@ -268,12 +283,13 @@ function GroupAttendanceGrid({
     }
     return stats;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredMembers, dates, groupAttendance, groupKey]);
+  }, [filteredMembers, regularDates, groupAttendance, groupKey]);
 
-  // Per-date stats
+  // Per-date stats (skip no-session dates)
   const dateStats = useMemo(() => {
     const stats = new Map<string, { present: number; late: number; absent: number; rate: number }>();
     for (const d of dates) {
+      if (noSessionSet.has(d)) continue;
       let present = 0, late = 0, absent = 0;
       for (const m of filteredMembers) {
         const v = getVal(m.contactId, d);
@@ -286,7 +302,7 @@ function GroupAttendanceGrid({
     }
     return stats;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredMembers, dates, groupAttendance, groupKey]);
+  }, [filteredMembers, dates, noSessionSet, groupAttendance, groupKey]);
 
   const fmtDate = (iso: string) => {
     const d = new Date(iso + 'T12:00:00');
@@ -350,6 +366,11 @@ function GroupAttendanceGrid({
           <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
             <span className="inline-block w-3.5 h-3.5 rounded bg-[#f0eeea] text-[#C5CDD8] text-[0.5rem] leading-[14px] text-center">&mdash;</span> No data
           </span>
+          {noSessionDates.length > 0 && (
+            <span className="flex items-center gap-1 text-[0.65rem] text-[#5A6472]">
+              <span className="inline-block w-3.5 h-3.5 rounded bg-[#8B8B8B] text-white text-[0.5rem] font-bold leading-[14px] text-center">✕</span> No session
+            </span>
+          )}
         </div>
       </div>
 
@@ -367,10 +388,15 @@ function GroupAttendanceGrid({
                 {dates.map(d => {
                   const { day, weekday } = fmtDate(d);
                   const evName = eventByDate.get(d);
+                  const isNoSession = noSessionSet.has(d);
                   return (
-                    <th key={d} className={`px-0.5 py-1.5 text-center min-w-[32px] ${evName ? 'bg-[#E8687D]' : 'bg-[#233580]'}`}
-                      title={evName || undefined}>
-                      {evName ? (
+                    <th key={d} className={`px-0.5 py-1.5 text-center min-w-[32px] ${
+                      isNoSession ? 'bg-[#8B8B8B]' : evName ? 'bg-[#E8687D]' : 'bg-[#233580]'
+                    }`}
+                      title={isNoSession ? 'No session' : evName || undefined}>
+                      {isNoSession ? (
+                        <><div className="text-[0.55rem] text-white/60">✕</div><div className="text-[0.65rem] text-white/70 font-semibold">{day}</div></>
+                      ) : evName ? (
                         <><div className="text-[0.55rem] text-white/70">★</div><div className="text-[0.65rem] text-white font-semibold">{day}</div></>
                       ) : (
                         <><div className="text-[0.6rem] capitalize text-white/50">{weekday}</div><div className="text-[0.7rem] text-white font-semibold">{day}</div></>
@@ -397,6 +423,14 @@ function GroupAttendanceGrid({
                       </span>
                     </td>
                     {dates.map(d => {
+                      const isNoSession = noSessionSet.has(d);
+                      if (isNoSession) {
+                        return (
+                          <td key={d} className="px-0.5 py-2 text-center border-b border-[#f0eeea] bg-[#f0eeea]/60">
+                            <span className="inline-flex items-center justify-center w-5 h-5 text-[0.55rem] text-[#bbb]">&mdash;</span>
+                          </td>
+                        );
+                      }
                       const val = getVal(member.contactId, d);
                       return (
                         <td key={d} className="px-0.5 py-2 text-center border-b border-[#f0eeea]">
@@ -425,6 +459,7 @@ function GroupAttendanceGrid({
                 <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">Total Present</td>
                 <td className="sticky left-[200px] z-10 bg-[#F5F3EF] px-2 py-2 text-center text-[#1B2A6B]">&mdash;</td>
                 {dates.map(d => {
+                  if (noSessionSet.has(d)) return <td key={d} className="px-0.5 py-2 text-center bg-[#e8e5de]/60" />;
                   const s = dateStats.get(d);
                   return (
                     <td key={d} className="px-0.5 py-2 text-center">
@@ -437,6 +472,7 @@ function GroupAttendanceGrid({
                 <td className="sticky left-0 z-10 bg-[#F5F3EF] px-3 py-2 text-[#1B2A6B]">% Attendance</td>
                 <td className="sticky left-[200px] z-10 bg-[#F5F3EF] px-2 py-2 text-center text-[#1B2A6B]">&mdash;</td>
                 {dates.map(d => {
+                  if (noSessionSet.has(d)) return <td key={d} className="px-0.5 py-2 text-center bg-[#e8e5de]/60" />;
                   const s = dateStats.get(d);
                   const r = s?.rate ?? 0;
                   return (

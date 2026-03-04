@@ -45,6 +45,9 @@ interface DataContextType {
   // Group attendance (roster-based, all groups)
   groupAttendance: GroupAttendanceData;
   updateGroupAttendance: (group: string, contactId: string, date: string, value: AttendanceValue) => void;
+  // No-session dates (dates to display as grayed out, no attendance expected)
+  noSessionDates: string[];
+  toggleNoSessionDate: (date: string) => void;
   loading: boolean;
 }
 
@@ -70,6 +73,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [enabledDateGroups, setEnabledDateGroups] = useState<Record<string, string[]>>({});
   const [rosterData, setRosterData] = useState<RosterData | null>(null);
   const [groupAttendance, setGroupAttendance] = useState<GroupAttendanceData>({});
+  const [noSessionDates, setNoSessionDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Track latest values for save callbacks that need current state
@@ -103,6 +107,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (data.groupAttendance && typeof data.groupAttendance === 'object') {
           setGroupAttendance(data.groupAttendance as GroupAttendanceData);
         }
+        if (Array.isArray(data.noSessionDates)) setNoSessionDates(data.noSessionDates);
       })
       .catch(err => console.error('Failed to load data', err))
       .finally(() => setLoading(false));
@@ -311,6 +316,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // ── No-session dates ──
+
+  const toggleNoSessionDate = useCallback((date: string) => {
+    setNoSessionDates(prev => {
+      const next = prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date];
+      saveToServer('noSessionDates', next);
+      return next;
+    });
+  }, []);
+
   // ── Computed member lists ──
 
   const allMembers = useMemo(() => {
@@ -343,6 +358,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       enabledDates, enabledDateGroups, toggleEnabledDate, updateEnabledDateGroups, getEnabledDatesForGroup,
       rosterData, importRoster,
       groupAttendance, updateGroupAttendance,
+      noSessionDates, toggleNoSessionDate,
       loading,
     }}>
       {children}
