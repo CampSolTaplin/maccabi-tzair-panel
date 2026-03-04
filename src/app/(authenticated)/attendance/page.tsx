@@ -610,12 +610,15 @@ function SOMAttendanceGrid() {
     return allColumns.filter(c => !collapsedMonths.has(c.month));
   }, [allColumns, collapsedMonths]);
 
-  // Detect "no session" dates (auto-detected from all-null + context no-session dates)
+  // Detect "no session" dates (auto-detected from all-null Excel dates + explicitly marked in Settings)
+  // Enabled dates from Settings are NEVER auto-detected as no-session (they may just have no data yet)
   const noSessionDates = useMemo(() => {
     const set = new Set<string>(contextNoSessionDates);
     if (!attendance) return set;
+    const enabledSet = new Set(contextEnabledDates);
     for (const d of visibleSessionDates) {
-      if (set.has(d)) continue; // already marked
+      if (set.has(d)) continue; // already explicitly marked
+      if (enabledSet.has(d)) continue; // never auto-detect enabled dates as no-session
       let allNull = true;
       for (const m of attendance.members) {
         const val = (attendance.records[m.contactId] || {})[d];
@@ -624,7 +627,7 @@ function SOMAttendanceGrid() {
       if (allNull) set.add(d);
     }
     return set;
-  }, [attendance, visibleSessionDates, contextNoSessionDates]);
+  }, [attendance, visibleSessionDates, contextNoSessionDates, contextEnabledDates]);
 
   // Month groups for header — including collapsed placeholders
   const monthGroups = useMemo(() => {
