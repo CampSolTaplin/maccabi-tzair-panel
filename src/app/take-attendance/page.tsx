@@ -406,6 +406,8 @@ export default function TakeAttendancePage() {
                     name={member.fullName}
                     value={getVal(member.contactId)}
                     onSet={(v) => setAttendanceValue(member.contactId, v)}
+                    photoUrl={memberPhotos[member.contactId]?.dataUrl}
+                    onPhotoClick={() => setPhotoModal({ contactId: member.contactId, name: member.fullName })}
                   />
                 ))}
               </div>
