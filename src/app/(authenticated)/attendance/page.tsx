@@ -4,10 +4,12 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import Topbar from '@/components/layout/Topbar';
 import { useData } from '@/lib/data-context';
 import { CommunityEvent, AttendanceValue, Chanich } from '@/types';
+import MemberAvatar from '@/components/MemberAvatar';
+import { buildWhatsAppFollowUp, buildEmailFollowUp, countRecentAbsences } from '@/lib/message-utils';
 import {
   Upload, Search, Filter, Star, UserMinus, UserPlus, X,
   RotateCcw, MoreVertical, ArrowUpDown, ChevronRight, ChevronDown,
-  Users, CalendarDays,
+  Users, CalendarDays, MessageCircle, Mail,
 } from 'lucide-react';
 
 type ColumnType = 'session' | 'event';
@@ -74,6 +76,7 @@ export default function AttendancePage() {
     rosterData, groupAttendance, updateGroupAttendance,
     getEnabledDatesForGroup,
     noSessionDates,
+    memberPhotos,
   } = useData();
 
   const [selectedGroup, setSelectedGroup] = useState('som-legacy');
@@ -172,6 +175,7 @@ export default function AttendancePage() {
             enabledDates={getEnabledDatesForGroup(selectedGroup)}
             events={events}
             noSessionDates={noSessionDates}
+            memberPhotos={memberPhotos}
           />
         )}
       </div>
@@ -192,6 +196,7 @@ function GroupAttendanceGrid({
   enabledDates,
   events,
   noSessionDates,
+  memberPhotos,
 }: {
   groupKey: string;
   rosterData: ReturnType<typeof useData>['rosterData'];
@@ -200,6 +205,7 @@ function GroupAttendanceGrid({
   enabledDates: string[];
   events: CommunityEvent[];
   noSessionDates: string[];
+  memberPhotos: ReturnType<typeof useData>['memberPhotos'];
 }) {
   const [search, setSearch] = useState('');
 
@@ -414,7 +420,14 @@ function GroupAttendanceGrid({
                 return (
                   <tr key={member.contactId} className={`${rowBg} hover:bg-[#E3F2FD]/30 transition-colors`}>
                     <td className={`sticky left-0 z-10 px-3 py-2 border-b border-[#f0eeea] ${rowBg}`}>
-                      <span className="font-medium text-[#1A1A2E] whitespace-nowrap">{member.fullName}</span>
+                      <div className="flex items-center gap-1.5">
+                        <MemberAvatar
+                          photoUrl={memberPhotos[member.contactId]?.dataUrl}
+                          name={member.fullName}
+                          size="sm"
+                        />
+                        <span className="font-medium text-[#1A1A2E] whitespace-nowrap">{member.fullName}</span>
+                      </div>
                     </td>
                     <td className={`sticky left-[200px] z-10 px-2 py-2 text-center font-bold border-b border-[#f0eeea] ${rowBg}`}>
                       <span className={`${rate >= 70 ? 'text-[#2D8B4E]' : rate >= 40 ? 'text-[#E89B3A]' : 'text-[#C0392B]'}`}>
@@ -507,7 +520,16 @@ function SOMAttendanceGrid() {
     activeMembers, droppedMembers,
     enabledDates: contextEnabledDates,
     noSessionDates: contextNoSessionDates,
+    memberPhotos, rosterData,
   } = useData();
+
+  // Lookup map for contact info (phone/email for follow-up)
+  const contactInfoMap = useMemo(() => {
+    if (!rosterData) return new Map<string, Chanich>();
+    const map = new Map<string, Chanich>();
+    for (const c of rosterData.chanichim) map.set(c.contactId, c);
+    return map;
+  }, [rosterData]);
   const [search, setSearch] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [showEvents, setShowEvents] = useState(true);
@@ -901,6 +923,11 @@ function SOMAttendanceGrid() {
                           className="w-5 h-5 flex items-center justify-center rounded hover:bg-[#e8e5de] transition-colors flex-shrink-0">
                           <MoreVertical className="w-3 h-3 text-[#999]" />
                         </button>
+                        <MemberAvatar
+                          photoUrl={memberPhotos[member.contactId]?.dataUrl}
+                          name={member.fullName}
+                          size="sm"
+                        />
                         <span className={`font-medium text-[#1A1A2E] whitespace-nowrap ${isDropped ? 'line-through' : ''}`}>
                           {member.lastName}, {member.firstName}
                         </span>
@@ -1021,6 +1048,35 @@ function SOMAttendanceGrid() {
                 <UserMinus className="w-3.5 h-3.5" /> Drop member
               </button>
             )}
+            {/* Follow-up messaging */}
+            {(() => {
+              const info = contactInfoMap.get(menuInfo.contactId);
+              if (!info) return null;
+              const rec = attendance?.records[menuInfo.contactId] || {};
+              const dates = attendance?.dates || [];
+              const missed = countRecentAbsences(rec as Record<string, boolean | 'late' | null>, dates);
+              const whatsappUrl = info.primaryPhone ? buildWhatsAppFollowUp(info.primaryPhone, info.fullName, Math.max(missed, 1)) : null;
+              const emailUrl = info.primaryEmail ? buildEmailFollowUp(info.primaryEmail, info.fullName, Math.max(missed, 1)) : null;
+              if (!whatsappUrl && !emailUrl) return null;
+              return (
+                <>
+                  <div className="border-t border-[#f0eeea] my-1" />
+                  <div className="px-3 py-1 text-[0.6rem] font-semibold text-[#999] uppercase">Follow up</div>
+                  {whatsappUrl && (
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMenuInfo(null)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#25D366] hover:bg-[#f4f2ee] transition-colors">
+                      <MessageCircle className="w-3.5 h-3.5" /> WhatsApp parent
+                    </a>
+                  )}
+                  {emailUrl && (
+                    <a href={emailUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMenuInfo(null)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[#1B2A6B] hover:bg-[#f4f2ee] transition-colors">
+                      <Mail className="w-3.5 h-3.5" /> Email parent
+                    </a>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </>
       )}

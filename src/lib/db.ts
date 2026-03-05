@@ -42,6 +42,12 @@ async function init() {
   await pool.query(`
     ALTER TABLE app_state ADD COLUMN IF NOT EXISTS no_session_dates JSONB NOT NULL DEFAULT '[]'
   `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE app_state ADD COLUMN IF NOT EXISTS member_photos JSONB NOT NULL DEFAULT '{}'
+  `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE app_state ADD COLUMN IF NOT EXISTS member_notes JSONB NOT NULL DEFAULT '{}'
+  `).catch(() => {});
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS mtz_users (
@@ -131,6 +137,8 @@ export async function loadAll() {
       rosterData: null,
       groupAttendance: {},
       noSessionDates: [],
+      memberPhotos: {},
+      memberNotes: {},
     };
   }
   const row = rows[0];
@@ -144,6 +152,8 @@ export async function loadAll() {
     rosterData: row.roster_data || null,
     groupAttendance: row.group_attendance || {},
     noSessionDates: row.no_session_dates || [],
+    memberPhotos: row.member_photos || {},
+    memberNotes: row.member_notes || {},
   };
 }
 
@@ -157,6 +167,8 @@ const COLUMN_MAP: Record<string, string> = {
   rosterData: 'roster_data',
   groupAttendance: 'group_attendance',
   noSessionDates: 'no_session_dates',
+  memberPhotos: 'member_photos',
+  memberNotes: 'member_notes',
 };
 
 export async function saveKey(key: string, value: unknown) {

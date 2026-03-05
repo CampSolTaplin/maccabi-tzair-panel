@@ -29,9 +29,15 @@ export async function PUT(req: Request) {
   try {
     const { key, value } = await req.json();
 
-    const allowed = ['attendanceData', 'events', 'memberOverrides', 'addedMembers', 'enabledDates', 'enabledDateGroups', 'rosterData', 'groupAttendance', 'noSessionDates'];
+    const allowed = ['attendanceData', 'events', 'memberOverrides', 'addedMembers', 'enabledDates', 'enabledDateGroups', 'rosterData', 'groupAttendance', 'noSessionDates', 'memberPhotos', 'memberNotes'];
     if (!allowed.includes(key)) {
       return NextResponse.json({ error: 'Invalid key' }, { status: 400 });
+    }
+
+    // Admin-only keys
+    const adminOnly = ['memberNotes'];
+    if (adminOnly.includes(key) && session.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     await saveKey(key, value);

@@ -3,10 +3,15 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import Topbar from '@/components/layout/Topbar';
 import { useData } from '@/lib/data-context';
+import { useAuth } from '@/lib/auth-context';
 import RosterImportModal from '@/components/import/RosterImportModal';
+import MemberAvatar from '@/components/MemberAvatar';
+import PhotoCaptureModal from '@/components/PhotoCaptureModal';
 import { Chanich, Program } from '@/types';
+import { formatPhoneForWhatsApp, parseEmails } from '@/lib/message-utils';
 import {
   Users, Upload, Search, Download, Columns3, X, ChevronDown, FileSpreadsheet,
+  MessageCircle, Mail, StickyNote, Plus, Trash2,
 } from 'lucide-react';
 
 // ── Column definitions ──
@@ -60,8 +65,11 @@ const AREAS: AreaDef[] = [
 ];
 
 export default function RosterPage() {
-  const { rosterData, loading } = useData();
+  const { rosterData, loading, memberPhotos, saveMemberPhoto, deleteMemberPhoto, memberNotes, addNote, deleteNote } = useData();
+  const { user } = useAuth();
   const [showImport, setShowImport] = useState(false);
+  const [photoModal, setPhotoModal] = useState<{ contactId: string; name: string } | null>(null);
+  const [notesModal, setNotesModal] = useState<string | null>(null);
   const [selectedArea, setSelectedArea] = useState('all');
   const [selectedSubGroup, setSelectedSubGroup] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -445,7 +453,71 @@ export default function RosterPage() {
                       {activeCols.map(col => (
                         <td key={col.key} className="py-2.5 px-3 text-[#1A1A2E]">
                           {col.key === 'fullName' ? (
-                            <span className="font-medium">{c.fullName}</span>
+                            <span className="flex items-center gap-2">
+                              <MemberAvatar
+                                photoUrl={memberPhotos[c.contactId]?.dataUrl}
+                                name={c.fullName}
+                                size="sm"
+                                onClick={() => setPhotoModal({ contactId: c.contactId, name: c.fullName })}
+                              />
+                              <span className="font-medium">{c.fullName}</span>
+                              {user?.role === 'admin' && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setNotesModal(c.contactId); }}
+                                  className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                                    (memberNotes[c.contactId]?.length || 0) > 0
+                                      ? 'bg-amber-100 hover:bg-amber-200'
+                                      : 'hover:bg-[#f0eeea] opacity-40 hover:opacity-80'
+                                  }`}
+                                  title={`${(memberNotes[c.contactId]?.length || 0)} notes`}
+                                >
+                                  <StickyNote className={`w-3 h-3 ${
+                                    (memberNotes[c.contactId]?.length || 0) > 0 ? 'text-amber-600' : 'text-[#999]'
+                                  }`} />
+                                </button>
+                              )}
+                            </span>
+                          ) : col.key === 'primaryPhone' || col.key === 'contactPhone' ? (
+                            <span className="flex items-center gap-1.5">
+                              <span className="truncate">{String(c[col.key] ?? '')}</span>
+                              {c[col.key] && formatPhoneForWhatsApp(String(c[col.key])) && (
+                                <a
+                                  href={`https://wa.me/${formatPhoneForWhatsApp(String(c[col.key]))}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center hover:bg-green-50 transition-colors"
+                                  title={`WhatsApp ${String(c[col.key])}`}
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+                                </a>
+                              )}
+                            </span>
+                          ) : col.key === 'primaryEmail' ? (
+                            <span className="flex items-center gap-1.5">
+                              <span className="truncate">{String(c[col.key] ?? '')}</span>
+                              {c[col.key] && (
+                                <a
+                                  href={`mailto:${String(c[col.key])}`}
+                                  className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center hover:bg-blue-50 transition-colors"
+                                  title={`Email ${String(c[col.key])}`}
+                                >
+                                  <Mail className="w-3.5 h-3.5 text-[#1B2A6B]" />
+                                </a>
+                              )}
+                            </span>
+                          ) : col.key === 'allEmails' ? (
+                            <span className="flex items-center gap-1.5">
+                              <span className="truncate">{String(c[col.key] ?? '')}</span>
+                              {parseEmails(String(c[col.key] ?? '')).length > 0 && (
+                                <a
+                                  href={`mailto:${parseEmails(String(c[col.key] ?? '')).join(',')}`}
+                                  className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center hover:bg-blue-50 transition-colors"
+                                  title={`Email all: ${String(c[col.key])}`}
+                                >
+                                  <Mail className="w-3.5 h-3.5 text-[#1B2A6B]" />
+                                </a>
+                              )}
+                            </span>
                           ) : (
                             String(c[col.key] ?? '')
                           )}
@@ -479,6 +551,39 @@ export default function RosterPage() {
       </div>
 
       <RosterImportModal open={showImport} onClose={() => setShowImport(false)} />
+
+      {/* Photo capture/upload modal */}
+      {photoModal && (
+        <PhotoCaptureModal
+          memberName={photoModal.name}
+          existingPhoto={memberPhotos[photoModal.contactId]?.dataUrl || null}
+          onSave={(dataUrl) => {
+            saveMemberPhoto(photoModal.contactId, {
+              dataUrl,
+              takenAt: new Date().toISOString(),
+              takenBy: user?.displayName || 'Admin',
+            });
+            setPhotoModal(null);
+          }}
+          onDelete={() => {
+            deleteMemberPhoto(photoModal.contactId);
+            setPhotoModal(null);
+          }}
+          onClose={() => setPhotoModal(null)}
+        />
+      )}
+
+      {/* Notes modal (admin-only) */}
+      {notesModal && rosterData && (
+        <NotesModal
+          contactId={notesModal}
+          memberName={rosterData.chanichim.find(c => c.contactId === notesModal)?.fullName || ''}
+          notes={memberNotes[notesModal] || []}
+          onAdd={(text) => addNote(notesModal, text, user?.displayName || 'Admin')}
+          onDelete={(noteId) => deleteNote(notesModal, noteId)}
+          onClose={() => setNotesModal(null)}
+        />
+      )}
     </>
   );
 }
@@ -499,5 +604,91 @@ function ProgramBadge({ program }: { program: Program }) {
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-medium ${BADGE_STYLES[program] || 'bg-gray-50 text-gray-700'}`}>
       {program}
     </span>
+  );
+}
+
+// ── Notes Modal (Admin-only) ──
+
+function NotesModal({ contactId, memberName, notes, onAdd, onDelete, onClose }: {
+  contactId: string;
+  memberName: string;
+  notes: { id: string; text: string; createdAt: string; createdBy: string }[];
+  onAdd: (text: string) => void;
+  onDelete: (noteId: string) => void;
+  onClose: () => void;
+}) {
+  const [newText, setNewText] = useState('');
+
+  // Suppress unused variable warning — contactId may be needed for future features
+  void contactId;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-[#D8E1EA]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center">
+              <StickyNote className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-serif font-bold text-[#1B2A6B]">Notes</h3>
+              <p className="text-sm text-[#5A6472]">{memberName}</p>
+            </div>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[#f0eeea] transition-colors">
+              <X className="w-4 h-4 text-[#5A6472]" />
+            </button>
+          </div>
+        </div>
+
+        {/* Notes list */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+          {notes.length === 0 && (
+            <p className="text-sm text-[#5A6472] text-center py-4">No notes yet.</p>
+          )}
+          {notes.slice().reverse().map(note => (
+            <div key={note.id} className="bg-[#FAFAF8] rounded-lg p-3 border border-[#f0eeea]">
+              <p className="text-sm text-[#1A1A2E] whitespace-pre-wrap">{note.text}</p>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-[0.65rem] text-[#999]">
+                  {new Date(note.createdAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                    hour: 'numeric', minute: '2-digit',
+                  })}
+                  {note.createdBy && ` · ${note.createdBy}`}
+                </span>
+                <button
+                  onClick={() => onDelete(note.id)}
+                  className="p-1 rounded hover:bg-red-50 transition-colors"
+                  title="Delete note"
+                >
+                  <Trash2 className="w-3 h-3 text-[#C0392B]" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Add note */}
+        <div className="px-6 pb-6 pt-4 border-t border-[#D8E1EA]">
+          <div className="flex gap-2">
+            <textarea
+              value={newText}
+              onChange={e => setNewText(e.target.value)}
+              placeholder="Add a note..."
+              rows={2}
+              className="flex-1 px-3 py-2 rounded-lg border border-[#D8E1EA] text-sm resize-none focus:outline-none focus:border-[#1B2A6B] focus:ring-2 focus:ring-[#1B2A6B]/10"
+            />
+            <button
+              onClick={() => { if (newText.trim()) { onAdd(newText.trim()); setNewText(''); } }}
+              disabled={!newText.trim()}
+              className="px-3 py-2 rounded-lg bg-[#1B2A6B] text-white text-sm font-medium hover:bg-[#2A3D8F] transition-all disabled:opacity-40 self-end"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

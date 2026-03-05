@@ -95,3 +95,29 @@ export interface CommunityEvent {
   /** Group keys this event applies to (e.g. ['Kinder', '1st Grade', 'SOM']) */
   groups: string[];
 }
+
+// ── Member Photos ──
+
+export interface MemberPhoto {
+  /** Base64 data URL (data:image/jpeg;base64,...) */
+  dataUrl: string;
+  /** ISO timestamp when photo was taken */
+  takenAt: string;
+  /** Who took the photo (username or display name) */
+  takenBy?: string;
+}
+
+/** Maps contactId to MemberPhoto */
+export type MemberPhotos = Record<string, MemberPhoto>;
+
+// ── Behavioral Notes (Admin-only) ──
+
+export interface MemberNote {
+  id: string;
+  text: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+/** Maps contactId to array of notes */
+export type MemberNotes = Record<string, MemberNote[]>;

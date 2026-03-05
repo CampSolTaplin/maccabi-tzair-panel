@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
 import { AttendanceValue, SOMAttendanceValue } from '@/types';
+import MemberAvatar from '@/components/MemberAvatar';
+import PhotoCaptureModal from '@/components/PhotoCaptureModal';
 import {
   LogOut, Search, Check, Clock, X, ChevronDown, UserCircle, CalendarDays, Users, Star,
 } from 'lucide-react';
@@ -41,10 +43,12 @@ export default function TakeAttendancePage() {
     rosterData, groupAttendance, updateGroupAttendance,
     getEnabledDatesForGroup,
     refreshAttendanceFromServer,
+    memberPhotos, saveMemberPhoto,
   } = useData();
 
   const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [photoModal, setPhotoModal] = useState<{ contactId: string; name: string } | null>(null);
 
   const userGroup = user?.group || 'SOM';
   const groupLabel = GROUP_LABELS[userGroup] || userGroup;
@@ -386,6 +390,8 @@ export default function TakeAttendancePage() {
                           name={member.fullName}
                           value={getVal(member.contactId)}
                           onSet={(v) => setAttendanceValue(member.contactId, v)}
+                          photoUrl={memberPhotos[member.contactId]?.dataUrl}
+                          onPhotoClick={() => setPhotoModal({ contactId: member.contactId, name: member.fullName })}
                         />
                       ))}
                     </div>
@@ -416,15 +422,34 @@ export default function TakeAttendancePage() {
           </>
         )}
       </div>
+
+      {/* Photo capture modal */}
+      {photoModal && (
+        <PhotoCaptureModal
+          memberName={photoModal.name}
+          existingPhoto={memberPhotos[photoModal.contactId]?.dataUrl || null}
+          onSave={(dataUrl) => {
+            saveMemberPhoto(photoModal.contactId, {
+              dataUrl,
+              takenAt: new Date().toISOString(),
+              takenBy: user?.username || 'madrich',
+            });
+            setPhotoModal(null);
+          }}
+          onClose={() => setPhotoModal(null)}
+        />
+      )}
     </div>
   );
 }
 
 // ── Member Row Component ──
-function MemberRow({ name, value, onSet }: {
+function MemberRow({ name, value, onSet, photoUrl, onPhotoClick }: {
   name: string;
   value: AttendanceValue;
   onSet: (v: AttendanceValue) => void;
+  photoUrl?: string;
+  onPhotoClick?: () => void;
 }) {
   return (
     <div className={`bg-white rounded-xl border transition-all ${
@@ -434,6 +459,14 @@ function MemberRow({ name, value, onSet }: {
       : 'border-[#D8E1EA]'
     }`}>
       <div className="flex items-center gap-3 px-3 py-2.5">
+        {/* Photo avatar */}
+        <MemberAvatar
+          photoUrl={photoUrl}
+          name={name}
+          size="sm"
+          onClick={onPhotoClick}
+          showCameraOverlay={!photoUrl}
+        />
         {/* Name */}
         <span className="flex-1 text-sm font-medium text-[#1A1A2E] truncate">{name}</span>
 

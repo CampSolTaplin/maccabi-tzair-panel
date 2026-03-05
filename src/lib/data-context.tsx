@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
-import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData, AttendanceValue, GroupAttendanceData } from '@/types';
+import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData, AttendanceValue, GroupAttendanceData, MemberPhotos, MemberPhoto, MemberNotes } from '@/types';
 
 interface DataContextType {
   attendance: SOMAttendanceData | null;
@@ -50,6 +50,14 @@ interface DataContextType {
   toggleNoSessionDate: (date: string) => void;
   /** Fetch latest attendance data from server (for real-time sync between sessions) */
   refreshAttendanceFromServer: () => void;
+  // Member photos
+  memberPhotos: MemberPhotos;
+  saveMemberPhoto: (contactId: string, photo: MemberPhoto) => void;
+  deleteMemberPhoto: (contactId: string) => void;
+  // Behavioral notes (admin-only)
+  memberNotes: MemberNotes;
+  addNote: (contactId: string, text: string, createdBy: string) => void;
+  deleteNote: (contactId: string, noteId: string) => void;
   loading: boolean;
 }
 
@@ -76,6 +84,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [rosterData, setRosterData] = useState<RosterData | null>(null);
   const [groupAttendance, setGroupAttendance] = useState<GroupAttendanceData>({});
   const [noSessionDates, setNoSessionDates] = useState<string[]>([]);
+  const [memberPhotos, setMemberPhotos] = useState<MemberPhotos>({});
+  const [memberNotes, setMemberNotes] = useState<MemberNotes>({});
   const [loading, setLoading] = useState(true);
 
   // Track latest values for save callbacks that need current state
@@ -83,6 +93,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   memberOverridesRef.current = memberOverrides;
   const addedMembersRef = useRef(addedMembers);
   addedMembersRef.current = addedMembers;
+  const memberPhotosRef = useRef(memberPhotos);
+  memberPhotosRef.current = memberPhotos;
+  const memberNotesRef = useRef(memberNotes);
+  memberNotesRef.current = memberNotes;
 
   // Track in-flight attendance saves to avoid poll overwriting optimistic updates
   const inflightSaves = useRef(0);
@@ -113,6 +127,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           setGroupAttendance(data.groupAttendance as GroupAttendanceData);
         }
         if (Array.isArray(data.noSessionDates)) setNoSessionDates(data.noSessionDates);
+        if (data.memberPhotos && typeof data.memberPhotos === 'object') setMemberPhotos(data.memberPhotos);
+        if (data.memberNotes && typeof data.memberNotes === 'object') setMemberNotes(data.memberNotes);
       })
       .catch(err => console.error('Failed to load data', err))
       .finally(() => setLoading(false));
@@ -370,6 +386,52 @@ export function DataProvider({ children }: { children: ReactNode }) {
       .catch(err => console.error('Failed to sync attendance', err));
   }, []);
 
+  // ── Member Photos ──
+
+  const saveMemberPhoto = useCallback((contactId: string, photo: MemberPhoto) => {
+    const next = { ...memberPhotosRef.current, [contactId]: photo };
+    setMemberPhotos(next);
+    saveToServer('memberPhotos', next);
+  }, []);
+
+  const deleteMemberPhoto = useCallback((contactId: string) => {
+    const next = { ...memberPhotosRef.current };
+    delete next[contactId];
+    setMemberPhotos(next);
+    saveToServer('memberPhotos', next);
+  }, []);
+
+  // ── Behavioral Notes (Admin-only) ──
+
+  const addNote = useCallback((contactId: string, text: string, createdBy: string) => {
+    const note = {
+      id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      text,
+      createdAt: new Date().toISOString(),
+      createdBy,
+    };
+    const current = memberNotesRef.current;
+    const next = {
+      ...current,
+      [contactId]: [...(current[contactId] || []), note],
+    };
+    setMemberNotes(next);
+    saveToServer('memberNotes', next);
+  }, []);
+
+  const deleteNote = useCallback((contactId: string, noteId: string) => {
+    const current = memberNotesRef.current;
+    const notes = (current[contactId] || []).filter(n => n.id !== noteId);
+    const next = { ...current };
+    if (notes.length === 0) {
+      delete next[contactId];
+    } else {
+      next[contactId] = notes;
+    }
+    setMemberNotes(next);
+    saveToServer('memberNotes', next);
+  }, []);
+
   // ── Computed member lists ──
 
   const allMembers = useMemo(() => {
@@ -404,6 +466,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       groupAttendance, updateGroupAttendance,
       noSessionDates, toggleNoSessionDate,
       refreshAttendanceFromServer,
+      memberPhotos, saveMemberPhoto, deleteMemberPhoto,
+      memberNotes, addNote, deleteNote,
       loading,
     }}>
       {children}
