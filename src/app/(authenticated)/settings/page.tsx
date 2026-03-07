@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Topbar from '@/components/layout/Topbar';
-import { Database, Bell, Palette, Upload, Edit, CheckCircle2, Trash2, CalendarDays, Plus, X, Star, Zap, Check, Tag, Ban } from 'lucide-react';
+import { Database, Bell, Palette, Upload, Edit, CheckCircle2, Trash2, CalendarDays, Plus, X, Star, Zap, Check, Tag, Ban, Lock, Unlock } from 'lucide-react';
 import { useData } from '@/lib/data-context';
 
 // ── Group definitions (same as events page) ──
@@ -73,6 +73,7 @@ export default function SettingsPage() {
     enabledDates, enabledDateGroups, toggleEnabledDate, updateEnabledDateGroups,
     events,
     noSessionDates, toggleNoSessionDate,
+    lockedDates, toggleLockedDate,
   } = useData();
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
   const [newDateGroups, setNewDateGroups] = useState<Set<string>>(new Set());
@@ -299,17 +300,24 @@ export default function SettingsPage() {
                 const eventName = eventByDate.get(date);
                 const dateGroups = enabledDateGroups[date] || [];
                 const isEditing = editingDateGroups === date;
+                const isLocked = lockedDates.includes(date);
 
                 return (
-                  <div key={date} className="rounded-lg border border-[#D8E1EA] bg-[#f8f7f5] overflow-hidden">
+                  <div key={date} className={`rounded-lg border overflow-hidden ${
+                    isLocked
+                      ? 'border-[#E89B3A]/30 bg-[#E89B3A]/[0.04]'
+                      : 'border-[#D8E1EA] bg-[#f8f7f5]'
+                  }`}>
                     <div className="flex items-center justify-between px-4 py-2.5">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         {eventName ? (
                           <Star className="w-4 h-4 text-[#E89B3A] flex-shrink-0" />
+                        ) : isLocked ? (
+                          <Lock className="w-4 h-4 text-[#E89B3A] flex-shrink-0" />
                         ) : (
                           <CalendarDays className="w-4 h-4 text-[#2D8B4E] flex-shrink-0" />
                         )}
-                        <span className="text-sm font-medium text-[#1A1A2E] truncate">
+                        <span className={`text-sm font-medium truncate ${isLocked ? 'text-[#5A6472]' : 'text-[#1A1A2E]'}`}>
                           {formatDate(date)}
                         </span>
                         {eventName && (
@@ -317,8 +325,30 @@ export default function SettingsPage() {
                             {eventName}
                           </span>
                         )}
+                        {isLocked && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.6rem] font-semibold bg-[#E89B3A]/15 text-[#E89B3A] flex-shrink-0">
+                            Locked
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                        {/* Lock / Unlock toggle */}
+                        <button
+                          onClick={() => toggleLockedDate(date)}
+                          className={`px-2 py-1 rounded-lg text-[0.65rem] font-medium transition-all ${
+                            isLocked
+                              ? 'bg-[#E89B3A] text-white hover:bg-[#D08A2F]'
+                              : 'border border-[#D8E1EA] text-[#5A6472] hover:bg-white'
+                          }`}
+                          title={isLocked ? 'Unlock for madrichim' : 'Lock for madrichim'}
+                        >
+                          {isLocked ? (
+                            <span className="flex items-center gap-1"><Lock className="w-3 h-3" /> Locked</span>
+                          ) : (
+                            <span className="flex items-center gap-1"><Unlock className="w-3 h-3" /> Open</span>
+                          )}
+                        </button>
+                        {/* Edit groups */}
                         <button
                           onClick={() => isEditing ? saveEditGroups() : startEditingGroups(date)}
                           className={`px-2 py-1 rounded-lg text-[0.65rem] font-medium transition-all ${
@@ -334,12 +364,13 @@ export default function SettingsPage() {
                             <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> Groups</span>
                           )}
                         </button>
+                        {/* Delete date entirely */}
                         <button
                           onClick={() => toggleEnabledDate(date)}
-                          className="p-1.5 rounded-lg text-[#C0392B] hover:bg-red-50 transition-all"
-                          title="Disable date"
+                          className="p-1.5 rounded-lg text-[#C0392B]/50 hover:text-[#C0392B] hover:bg-red-50 transition-all"
+                          title="Remove date entirely"
                         >
-                          <X className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>

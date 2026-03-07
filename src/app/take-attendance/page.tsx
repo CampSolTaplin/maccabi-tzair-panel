@@ -44,6 +44,7 @@ export default function TakeAttendancePage() {
     getEnabledDatesForGroup,
     refreshAttendanceFromServer,
     memberPhotos, saveMemberPhoto,
+    lockedDates,
   } = useData();
 
   const [search, setSearch] = useState('');
@@ -108,10 +109,10 @@ export default function TakeAttendancePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useRosterFlow, rosterData, userGroup, isImported, attendance, activeMembers]);
 
-  // Get dates enabled for this madrich's group
+  // Get dates enabled for this madrich's group (excluding locked dates)
   const groupEnabledDates = useMemo(() => {
-    return getEnabledDatesForGroup(userGroup);
-  }, [getEnabledDatesForGroup, userGroup]);
+    return getEnabledDatesForGroup(userGroup).filter(d => !lockedDates.includes(d));
+  }, [getEnabledDatesForGroup, userGroup, lockedDates]);
 
   // Sort enabled dates descending (most recent first), auto-select first
   const sortedEnabledDates = useMemo(() => {

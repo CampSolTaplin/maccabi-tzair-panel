@@ -48,6 +48,9 @@ interface DataContextType {
   // No-session dates (dates to display as grayed out, no attendance expected)
   noSessionDates: string[];
   toggleNoSessionDate: (date: string) => void;
+  // Locked dates (attendance taken but frozen — madrichim can't edit)
+  lockedDates: string[];
+  toggleLockedDate: (date: string) => void;
   /** Fetch latest attendance data from server (for real-time sync between sessions) */
   refreshAttendanceFromServer: () => void;
   // Member photos
@@ -84,6 +87,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [rosterData, setRosterData] = useState<RosterData | null>(null);
   const [groupAttendance, setGroupAttendance] = useState<GroupAttendanceData>({});
   const [noSessionDates, setNoSessionDates] = useState<string[]>([]);
+  const [lockedDates, setLockedDates] = useState<string[]>([]);
   const [memberPhotos, setMemberPhotos] = useState<MemberPhotos>({});
   const [memberNotes, setMemberNotes] = useState<MemberNotes>({});
   const [loading, setLoading] = useState(true);
@@ -127,6 +131,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           setGroupAttendance(data.groupAttendance as GroupAttendanceData);
         }
         if (Array.isArray(data.noSessionDates)) setNoSessionDates(data.noSessionDates);
+        if (Array.isArray(data.lockedDates)) setLockedDates(data.lockedDates);
         if (data.memberPhotos && typeof data.memberPhotos === 'object') setMemberPhotos(data.memberPhotos);
         if (data.memberNotes && typeof data.memberNotes === 'object') setMemberNotes(data.memberNotes);
       })
@@ -361,6 +366,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const toggleLockedDate = useCallback((date: string) => {
+    setLockedDates(prev => {
+      const next = prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date];
+      saveToServer('lockedDates', next);
+      return next;
+    });
+  }, []);
+
   // ── Real-time sync: fetch latest attendance from server ──
 
   const refreshAttendanceFromServer = useCallback(() => {
@@ -465,6 +478,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       rosterData, importRoster,
       groupAttendance, updateGroupAttendance,
       noSessionDates, toggleNoSessionDate,
+      lockedDates, toggleLockedDate,
       refreshAttendanceFromServer,
       memberPhotos, saveMemberPhoto, deleteMemberPhoto,
       memberNotes, addNote, deleteNote,
