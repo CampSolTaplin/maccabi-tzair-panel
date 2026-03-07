@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
-import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData, AttendanceValue, GroupAttendanceData, MemberPhotos, MemberPhoto, MemberNotes } from '@/types';
+import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData, AttendanceValue, GroupAttendanceData, MemberPhotos, MemberPhoto, MemberNotes, Chanich } from '@/types';
 
 interface DataContextType {
   attendance: SOMAttendanceData | null;
@@ -66,6 +66,13 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | null>(null);
 
+// ── Group matching helper (shared with attendance page) ──
+const PROGRAM_GROUPS = ['Pre-SOM', 'Trips', 'Machanot'];
+function matchesGroupForLock(groupKey: string, chanich: Chanich): boolean {
+  if (PROGRAM_GROUPS.includes(groupKey)) return chanich.program === groupKey;
+  return chanich.gradeLevel.toLowerCase().includes(groupKey.toLowerCase());
+}
+
 // Fire-and-forget save to server
 function saveToServer(key: string, value: unknown) {
   fetch('/api/data', {
@@ -101,6 +108,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   memberPhotosRef.current = memberPhotos;
   const memberNotesRef = useRef(memberNotes);
   memberNotesRef.current = memberNotes;
+  const attendanceRef = useRef(attendance);
+  attendanceRef.current = attendance;
+  const groupAttendanceRef = useRef(groupAttendance);
+  groupAttendanceRef.current = groupAttendance;
+  const enabledDateGroupsRef = useRef(enabledDateGroups);
+  enabledDateGroupsRef.current = enabledDateGroups;
+  const rosterDataRef = useRef(rosterData);
+  rosterDataRef.current = rosterData;
+  const lockedDatesRef = useRef(lockedDates);
+  lockedDatesRef.current = lockedDates;
 
   // Track in-flight attendance saves to avoid poll overwriting optimistic updates
   const inflightSaves = useRef(0);
@@ -367,11 +384,101 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleLockedDate = useCallback((date: string) => {
+    const isLocking = !lockedDatesRef.current.includes(date);
+
     setLockedDates(prev => {
-      const next = prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date];
+      const next = isLocking ? [...prev, date] : prev.filter(d => d !== date);
       saveToServer('lockedDates', next);
       return next;
     });
+
+    // When LOCKING: auto-mark absent for all unmarked members
+    if (isLocking) {
+      const att = attendanceRef.current;
+      const ga = groupAttendanceRef.current;
+      const edg = enabledDateGroupsRef.current;
+      const roster = rosterDataRef.current;
+      const overrides = memberOverridesRef.current;
+
+      // SOM legacy: mark absent for active members with no data
+      if (att) {
+        const somUpdates: string[] = [];
+        for (const member of att.members) {
+          if (overrides[member.contactId]?.status === 'dropped') continue;
+          const val = att.records[member.contactId]?.[date];
+          if (val == null) { // null or undefined = no data recorded
+            somUpdates.push(member.contactId);
+          }
+        }
+        if (somUpdates.length > 0) {
+          // Single local state update
+          setAttendance(prev => {
+            if (!prev) return prev;
+            const newRecords = { ...prev.records };
+            for (const cid of somUpdates) {
+              newRecords[cid] = { ...newRecords[cid], [date]: false };
+            }
+            return { ...prev, records: newRecords };
+          });
+          // Atomic server-side merges
+          for (const cid of somUpdates) {
+            inflightSaves.current++;
+            fetch('/api/data/attendance-sync', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ type: 'som', contactId: cid, date, value: false }),
+            })
+              .catch(err => console.error('Failed to auto-mark SOM absent', err))
+              .finally(() => { inflightSaves.current--; });
+          }
+        }
+      }
+
+      // Group attendance: mark absent for roster members in relevant groups
+      if (roster) {
+        const dateGroups = edg[date];
+        if (dateGroups && dateGroups.length > 0) {
+          const groupUpdates: { group: string; contactId: string }[] = [];
+          for (const groupKey of dateGroups) {
+            const members = roster.chanichim.filter(c => matchesGroupForLock(groupKey, c));
+            for (const member of members) {
+              if (overrides[member.contactId]?.status === 'dropped') continue;
+              const val = ga[groupKey]?.[member.contactId]?.[date];
+              if (val == null) { // null or undefined = no data recorded
+                groupUpdates.push({ group: groupKey, contactId: member.contactId });
+              }
+            }
+          }
+          if (groupUpdates.length > 0) {
+            // Single local state update
+            setGroupAttendance(prev => {
+              const next = { ...prev };
+              for (const { group, contactId } of groupUpdates) {
+                next[group] = {
+                  ...next[group],
+                  [contactId]: {
+                    ...(next[group]?.[contactId] || {}),
+                    [date]: false,
+                  },
+                };
+              }
+              return next;
+            });
+            // Atomic server-side merges
+            for (const { group, contactId } of groupUpdates) {
+              inflightSaves.current++;
+              fetch('/api/data/attendance-sync', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'group', group, contactId, date, value: false }),
+              })
+                .catch(err => console.error('Failed to auto-mark group absent', err))
+                .finally(() => { inflightSaves.current--; });
+            }
+          }
+        }
+      }
+    }
   }, []);
 
   // ── Real-time sync: fetch latest attendance from server ──
