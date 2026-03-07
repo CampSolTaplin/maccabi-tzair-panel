@@ -9,9 +9,10 @@ import MemberAvatar from '@/components/MemberAvatar';
 import PhotoCaptureModal from '@/components/PhotoCaptureModal';
 import { Chanich, Program } from '@/types';
 import { formatPhoneForWhatsApp, parseEmails } from '@/lib/message-utils';
+import { findGroupKey } from '@/lib/group-utils';
 import {
   Users, Upload, Search, Download, Columns3, X, ChevronDown, FileSpreadsheet,
-  MessageCircle, Mail, StickyNote, Plus, Trash2,
+  MessageCircle, Mail, StickyNote, Plus, Trash2, Filter, Camera, SlidersHorizontal,
 } from 'lucide-react';
 
 // ── Column definitions ──
@@ -65,7 +66,11 @@ const AREAS: AreaDef[] = [
 ];
 
 export default function RosterPage() {
-  const { rosterData, loading, memberPhotos, saveMemberPhoto, deleteMemberPhoto, memberNotes, addNote, deleteNote } = useData();
+  const {
+    rosterData, loading, memberPhotos, saveMemberPhoto, deleteMemberPhoto,
+    memberNotes, addNote, deleteNote,
+    events, groupAttendance, noSessionDates, getEnabledDatesForGroup,
+  } = useData();
   const { user } = useAuth();
   const [showImport, setShowImport] = useState(false);
   const [photoModal, setPhotoModal] = useState<{ contactId: string; name: string } | null>(null);
@@ -73,6 +78,15 @@ export default function RosterPage() {
   const [selectedArea, setSelectedArea] = useState('all');
   const [selectedSubGroup, setSelectedSubGroup] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+
+  // ── Smart filters ──
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterEvent, setFilterEvent] = useState<string | null>(null);
+  const [filterAttendanceMin, setFilterAttendanceMin] = useState<number | null>(null);
+  const [filterAttendanceOp, setFilterAttendanceOp] = useState<'>=' | '<='>('>=');
+  const [filterHasPhoto, setFilterHasPhoto] = useState<boolean | null>(null);
+  const [filterHasNotes, setFilterHasNotes] = useState<boolean | null>(null);
+  const [filterGender, setFilterGender] = useState<string | null>(null);
   const [visibleCols, setVisibleCols] = useState<Set<string>>(
     () => new Set(ROSTER_COLUMNS.filter(c => c.defaultVisible).map(c => c.key))
   );
@@ -139,6 +153,53 @@ export default function RosterPage() {
     })).filter(p => p.count > 0);
   }, [rosterData, selectedArea, currentArea]);
 
+  // ── Attendance % per member (for smart filter) ──
+  const memberAttendanceRates = useMemo(() => {
+    if (!rosterData) return new Map<string, number>();
+    const rates = new Map<string, number>();
+    const noSessionSet = new Set(noSessionDates);
+
+    for (const chanich of rosterData.chanichim) {
+      const groupKey = findGroupKey(chanich);
+      if (!groupKey) { rates.set(chanich.contactId, -1); continue; }
+
+      const datesForGroup = getEnabledDatesForGroup(groupKey);
+      const regularDates = datesForGroup.filter(d => !noSessionSet.has(d));
+      if (regularDates.length === 0) { rates.set(chanich.contactId, -1); continue; }
+
+      const recs = groupAttendance[groupKey]?.[chanich.contactId] || {};
+      let present = 0, late = 0;
+      for (const d of regularDates) {
+        const v = recs[d];
+        if (v === true) present++;
+        else if (v === 'late') late++;
+      }
+      const total = regularDates.length;
+      rates.set(chanich.contactId, Math.round(((present + late) / total) * 100));
+    }
+    return rates;
+  }, [rosterData, groupAttendance, getEnabledDatesForGroup, noSessionDates]);
+
+  // Active filter count
+  const activeFilterCount = useMemo(() => {
+    let c = 0;
+    if (filterEvent) c++;
+    if (filterAttendanceMin !== null) c++;
+    if (filterHasPhoto !== null) c++;
+    if (filterHasNotes !== null) c++;
+    if (filterGender) c++;
+    return c;
+  }, [filterEvent, filterAttendanceMin, filterHasPhoto, filterHasNotes, filterGender]);
+
+  const clearAllFilters = () => {
+    setFilterEvent(null);
+    setFilterAttendanceMin(null);
+    setFilterAttendanceOp('>=');
+    setFilterHasPhoto(null);
+    setFilterHasNotes(null);
+    setFilterGender(null);
+  };
+
   // Filter data
   const filteredData = useMemo(() => {
     if (!rosterData) return [];
@@ -172,8 +233,49 @@ export default function RosterPage() {
       );
     }
 
+    // ── Smart filters (AND logic) ──
+
+    // Event attendance
+    if (filterEvent) {
+      const event = events.find(e => e.id === filterEvent);
+      if (event) {
+        const attendeeSet = new Set(event.attendees);
+        list = list.filter(c => attendeeSet.has(c.contactId));
+      }
+    }
+
+    // Attendance %
+    if (filterAttendanceMin !== null) {
+      list = list.filter(c => {
+        const rate = memberAttendanceRates.get(c.contactId);
+        if (rate === undefined || rate === -1) return false;
+        return filterAttendanceOp === '>=' ? rate >= filterAttendanceMin : rate <= filterAttendanceMin;
+      });
+    }
+
+    // Has photo
+    if (filterHasPhoto === true) {
+      list = list.filter(c => !!memberPhotos[c.contactId]);
+    } else if (filterHasPhoto === false) {
+      list = list.filter(c => !memberPhotos[c.contactId]);
+    }
+
+    // Has notes
+    if (filterHasNotes === true) {
+      list = list.filter(c => (memberNotes[c.contactId]?.length || 0) > 0);
+    } else if (filterHasNotes === false) {
+      list = list.filter(c => (memberNotes[c.contactId]?.length || 0) === 0);
+    }
+
+    // Gender
+    if (filterGender) {
+      list = list.filter(c => c.gender === filterGender);
+    }
+
     return list;
-  }, [rosterData, selectedArea, selectedSubGroup, currentArea, search]);
+  }, [rosterData, selectedArea, selectedSubGroup, currentArea, search,
+      filterEvent, filterAttendanceMin, filterAttendanceOp, filterHasPhoto,
+      filterHasNotes, filterGender, events, memberAttendanceRates, memberPhotos, memberNotes]);
 
   // Active columns
   const activeCols = useMemo(() => {
@@ -395,6 +497,167 @@ export default function RosterPage() {
                   ))}
                 </div>
               )}
+
+              {/* ── Smart Filters ── */}
+              <div className="mb-3">
+                {/* Toggle + active chips row */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.7rem] font-medium transition-all ${
+                      showFilters || activeFilterCount > 0
+                        ? 'bg-[#2D8B4E]/10 text-[#2D8B4E] border border-[#2D8B4E]/30'
+                        : 'bg-[#F2F0EC] text-[#5A6472] hover:bg-[#E8E5DF]'
+                    }`}
+                  >
+                    <SlidersHorizontal className="w-3 h-3" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <span className="ml-0.5 w-4 h-4 rounded-full bg-[#2D8B4E] text-white text-[0.6rem] flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Active filter chips (always visible when filters active) */}
+                  {activeFilterCount > 0 && (
+                    <>
+                      {filterEvent && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2D8B4E]/10 text-[#2D8B4E] text-[0.65rem] font-medium">
+                          {events.find(e => e.id === filterEvent)?.name || 'Event'}
+                          <button onClick={() => setFilterEvent(null)} className="hover:text-[#1a5c30]"><X className="w-2.5 h-2.5" /></button>
+                        </span>
+                      )}
+                      {filterAttendanceMin !== null && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2D8B4E]/10 text-[#2D8B4E] text-[0.65rem] font-medium">
+                          Attendance {filterAttendanceOp} {filterAttendanceMin}%
+                          <button onClick={() => setFilterAttendanceMin(null)} className="hover:text-[#1a5c30]"><X className="w-2.5 h-2.5" /></button>
+                        </span>
+                      )}
+                      {filterHasPhoto !== null && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2D8B4E]/10 text-[#2D8B4E] text-[0.65rem] font-medium">
+                          {filterHasPhoto ? 'Has Photo' : 'No Photo'}
+                          <button onClick={() => setFilterHasPhoto(null)} className="hover:text-[#1a5c30]"><X className="w-2.5 h-2.5" /></button>
+                        </span>
+                      )}
+                      {filterHasNotes !== null && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2D8B4E]/10 text-[#2D8B4E] text-[0.65rem] font-medium">
+                          {filterHasNotes ? 'Has Notes' : 'No Notes'}
+                          <button onClick={() => setFilterHasNotes(null)} className="hover:text-[#1a5c30]"><X className="w-2.5 h-2.5" /></button>
+                        </span>
+                      )}
+                      {filterGender && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#2D8B4E]/10 text-[#2D8B4E] text-[0.65rem] font-medium">
+                          {filterGender}
+                          <button onClick={() => setFilterGender(null)} className="hover:text-[#1a5c30]"><X className="w-2.5 h-2.5" /></button>
+                        </span>
+                      )}
+                      <button
+                        onClick={clearAllFilters}
+                        className="text-[0.65rem] text-[#C0392B] hover:text-[#e0392b] font-medium ml-1"
+                      >
+                        Clear all
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Expanded filter controls */}
+                {showFilters && (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 pl-1 py-2.5 px-3 rounded-lg bg-[#FAFAF8] border border-[#D8E1EA]/60">
+                    {/* Event filter */}
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-[0.65rem] text-[#5A6472] font-medium whitespace-nowrap">Event:</label>
+                      <select
+                        value={filterEvent || ''}
+                        onChange={e => setFilterEvent(e.target.value || null)}
+                        className="px-2 py-1 rounded-md text-[0.7rem] border border-[#D8E1EA] bg-white focus:outline-none focus:border-[#2D8B4E] min-w-[140px]"
+                      >
+                        <option value="">Any</option>
+                        {events
+                          .slice()
+                          .sort((a, b) => b.date.localeCompare(a.date))
+                          .map(e => (
+                            <option key={e.id} value={e.id}>{e.name} ({e.date})</option>
+                          ))}
+                      </select>
+                    </div>
+
+                    {/* Attendance % filter */}
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-[0.65rem] text-[#5A6472] font-medium whitespace-nowrap">Attendance:</label>
+                      <button
+                        onClick={() => setFilterAttendanceOp(prev => prev === '>=' ? '<=' : '>=')}
+                        className="px-1.5 py-1 rounded-md text-[0.7rem] font-mono font-bold border border-[#D8E1EA] bg-white hover:bg-[#f0eeea] transition-colors min-w-[28px] text-center"
+                      >
+                        {filterAttendanceOp}
+                      </button>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={10}
+                        value={filterAttendanceMin ?? ''}
+                        onChange={e => setFilterAttendanceMin(e.target.value ? Number(e.target.value) : null)}
+                        placeholder="%"
+                        className="w-16 px-2 py-1 rounded-md text-[0.7rem] border border-[#D8E1EA] bg-white focus:outline-none focus:border-[#2D8B4E]"
+                      />
+                    </div>
+
+                    <span className="text-[#D8E1EA]">|</span>
+
+                    {/* Has Photo toggle */}
+                    <button
+                      onClick={() => setFilterHasPhoto(prev => prev === null ? true : prev === true ? false : null)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-md text-[0.7rem] font-medium transition-all ${
+                        filterHasPhoto === null
+                          ? 'bg-white border border-[#D8E1EA] text-[#5A6472]'
+                          : filterHasPhoto
+                          ? 'bg-[#2D8B4E]/10 border border-[#2D8B4E]/30 text-[#2D8B4E]'
+                          : 'bg-red-50 border border-red-200 text-red-600'
+                      }`}
+                    >
+                      <Camera className="w-3 h-3" />
+                      {filterHasPhoto === null ? 'Photo: Any' : filterHasPhoto ? 'Has Photo' : 'No Photo'}
+                    </button>
+
+                    {/* Has Notes toggle (admin-only) */}
+                    {user?.role === 'admin' && (
+                      <button
+                        onClick={() => setFilterHasNotes(prev => prev === null ? true : prev === true ? false : null)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-[0.7rem] font-medium transition-all ${
+                          filterHasNotes === null
+                            ? 'bg-white border border-[#D8E1EA] text-[#5A6472]'
+                            : filterHasNotes
+                            ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                            : 'bg-red-50 border border-red-200 text-red-600'
+                        }`}
+                      >
+                        <StickyNote className="w-3 h-3" />
+                        {filterHasNotes === null ? 'Notes: Any' : filterHasNotes ? 'Has Notes' : 'No Notes'}
+                      </button>
+                    )}
+
+                    {/* Gender toggle */}
+                    <div className="flex items-center gap-1">
+                      <label className="text-[0.65rem] text-[#5A6472] font-medium">Gender:</label>
+                      {['Male', 'Female'].map(g => (
+                        <button
+                          key={g}
+                          onClick={() => setFilterGender(prev => prev === g ? null : g)}
+                          className={`px-2 py-1 rounded-md text-[0.7rem] font-medium transition-all ${
+                            filterGender === g
+                              ? 'bg-[#1B2A6B] text-white shadow-sm'
+                              : 'bg-white border border-[#D8E1EA] text-[#5A6472] hover:bg-[#f0eeea]'
+                          }`}
+                        >
+                          {g === 'Male' ? 'M' : 'F'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Search */}
               <div className="relative">

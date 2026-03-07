@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
-import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData, AttendanceValue, GroupAttendanceData, MemberPhotos, MemberPhoto, MemberNotes, Chanich } from '@/types';
+import { SOMAttendanceData, SOMAttendanceValue, SOMMember, CommunityEvent, MemberOverride, AddedMember, RosterData, AttendanceValue, GroupAttendanceData, MemberPhotos, MemberPhoto, MemberNotes } from '@/types';
+import { matchesGroup as matchesGroupForLock } from '@/lib/group-utils';
 
 interface DataContextType {
   attendance: SOMAttendanceData | null;
@@ -65,13 +66,6 @@ interface DataContextType {
 }
 
 const DataContext = createContext<DataContextType | null>(null);
-
-// ── Group matching helper (shared with attendance page) ──
-const PROGRAM_GROUPS = ['Pre-SOM', 'Trips', 'Machanot'];
-function matchesGroupForLock(groupKey: string, chanich: Chanich): boolean {
-  if (PROGRAM_GROUPS.includes(groupKey)) return chanich.program === groupKey;
-  return chanich.gradeLevel.toLowerCase().includes(groupKey.toLowerCase());
-}
 
 // Fire-and-forget save to server
 function saveToServer(key: string, value: unknown) {
