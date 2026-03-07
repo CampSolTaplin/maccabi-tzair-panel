@@ -9,7 +9,7 @@ import { buildWhatsAppFollowUp, buildEmailFollowUp, countRecentAbsences } from '
 import {
   Upload, Search, Filter, Star, UserMinus, UserPlus, X,
   RotateCcw, MoreVertical, ArrowUpDown, ChevronRight, ChevronDown,
-  Users, CalendarDays, MessageCircle, Mail,
+  Users, CalendarDays, MessageCircle, Mail, Lock, Unlock,
 } from 'lucide-react';
 
 type ColumnType = 'session' | 'event';
@@ -76,7 +76,7 @@ export default function AttendancePage() {
     rosterData, groupAttendance, updateGroupAttendance,
     getEnabledDatesForGroup,
     noSessionDates,
-    lockedDates,
+    lockedDates, toggleLockedDate,
     memberPhotos,
   } = useData();
 
@@ -177,6 +177,7 @@ export default function AttendancePage() {
             events={events}
             noSessionDates={noSessionDates}
             lockedDates={lockedDates}
+            toggleLockedDate={toggleLockedDate}
             memberPhotos={memberPhotos}
           />
         )}
@@ -199,6 +200,7 @@ function GroupAttendanceGrid({
   events,
   noSessionDates,
   lockedDates,
+  toggleLockedDate,
   memberPhotos,
 }: {
   groupKey: string;
@@ -209,6 +211,7 @@ function GroupAttendanceGrid({
   events: CommunityEvent[];
   noSessionDates: string[];
   lockedDates: string[];
+  toggleLockedDate: (date: string) => void;
   memberPhotos: ReturnType<typeof useData>['memberPhotos'];
 }) {
   const [search, setSearch] = useState('');
@@ -403,12 +406,13 @@ function GroupAttendanceGrid({
                   return (
                     <th key={d} className={`px-0.5 py-1.5 text-center min-w-[32px] ${
                       isNoSession ? 'bg-[#8B8B8B]' : evName ? 'bg-[#E8687D]' : isLocked ? 'bg-[#5A6472]' : 'bg-[#233580]'
-                    }`}
-                      title={isNoSession ? 'No session' : isLocked ? `Locked — ${evName || weekday + ' ' + day}` : evName || undefined}>
+                    } ${!isNoSession ? 'cursor-pointer hover:brightness-110' : ''}`}
+                      title={isNoSession ? 'No session' : isLocked ? 'Click to unlock for madrichim' : 'Click to lock for madrichim'}
+                      onClick={() => !isNoSession && toggleLockedDate(d)}>
                       {isNoSession ? (
                         <><div className="text-[0.55rem] text-white/60">✕</div><div className="text-[0.65rem] text-white/70 font-semibold">{day}</div></>
                       ) : evName ? (
-                        <><div className="text-[0.55rem] text-white/70">★</div><div className="text-[0.65rem] text-white font-semibold">{day}</div></>
+                        <><div className="text-[0.55rem] text-white/70">{isLocked ? '🔒' : '★'}</div><div className="text-[0.65rem] text-white font-semibold">{day}</div></>
                       ) : isLocked ? (
                         <><div className="text-[0.55rem] text-white/50">🔒</div><div className="text-[0.65rem] text-white/70 font-semibold">{day}</div></>
                       ) : (
@@ -529,6 +533,7 @@ function SOMAttendanceGrid() {
     enabledDates: contextEnabledDates,
     noSessionDates: contextNoSessionDates,
     lockedDates: contextLockedDates,
+    toggleLockedDate: contextToggleLockedDate,
     memberPhotos, rosterData,
   } = useData();
 
@@ -904,10 +909,11 @@ function SOMAttendanceGrid() {
                   const isFirstOfMonth = i === 0 || !prevRendered || prevRendered.type === 'collapsed' || col.month !== (prevRendered as GridColumn).month;
                   return (
                     <th key={`${col.type}-${col.date}-${col.event?.id || ''}`}
-                      className={`px-0.5 py-1.5 text-center min-w-[32px] ${isFirstOfMonth ? 'border-l border-white/10' : ''} ${isEvent ? 'bg-[#E8687D]' : isNoSession ? 'bg-[#5A6472]' : lockedSet.has(col.date) ? 'bg-[#5A6472]' : 'bg-[#233580]'}`}
-                      title={isEvent ? col.event!.name : isNoSession ? 'No session' : lockedSet.has(col.date) ? 'Locked' : undefined}>
+                      className={`px-0.5 py-1.5 text-center min-w-[32px] ${isFirstOfMonth ? 'border-l border-white/10' : ''} ${isEvent ? 'bg-[#E8687D]' : isNoSession ? 'bg-[#5A6472]' : lockedSet.has(col.date) ? 'bg-[#5A6472]' : 'bg-[#233580]'} ${!isNoSession ? 'cursor-pointer hover:brightness-110' : ''}`}
+                      title={isNoSession ? 'No session' : lockedSet.has(col.date) ? 'Click to unlock for madrichim' : 'Click to lock for madrichim'}
+                      onClick={() => !isNoSession && contextToggleLockedDate(col.date)}>
                       {isEvent ? (
-                        <><div className="text-[0.55rem] text-white/70">★</div><div className="text-[0.65rem] text-white font-semibold">{day}</div></>
+                        <><div className="text-[0.55rem] text-white/70">{lockedSet.has(col.date) ? '🔒' : '★'}</div><div className="text-[0.65rem] text-white font-semibold">{day}</div></>
                       ) : lockedSet.has(col.date) && !isNoSession ? (
                         <><div className="text-[0.55rem] text-white/50">🔒</div><div className="text-[0.65rem] text-white/70 font-semibold">{day}</div></>
                       ) : (
