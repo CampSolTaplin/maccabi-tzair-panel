@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, Upload, X, RotateCcw } from 'lucide-react';
 import { compressImage } from '@/lib/image-utils';
 
@@ -36,15 +36,19 @@ export default function PhotoCaptureModal({
         video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setCapturing(true);
+      setCapturing(true); // Render the <video> element first
     } catch {
       alert('Could not access camera. Please use file upload instead.');
     }
   }, []);
+
+  // Attach stream to video element once it's rendered in the DOM
+  useEffect(() => {
+    if (capturing && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [capturing]);
 
   const capturePhoto = useCallback(async () => {
     if (!videoRef.current) return;
